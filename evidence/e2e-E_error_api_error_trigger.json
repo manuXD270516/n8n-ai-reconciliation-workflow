@@ -1,0 +1,126 @@
+{
+  "execution_id": "19",
+  "status": "error",
+  "failed_node": {
+    "node": "Crear lote (API)",
+    "runs": 1,
+    "status": "error",
+    "items": 0,
+    "started_at": "2026-10-03T06:32:06.772Z",
+    "execution_ms": 25,
+    "error": "Your request is invalid or could not be processed by the service"
+  },
+  "error_workflow_execution": "20",
+  "mail": {
+    "id": "1LTGt1VaJPGAFRls8ipK0R",
+    "subject": "[ERROR] Conciliación de pagos asistida por IA con aprobación humana: ejecución #19 falló en Crear lote (API)",
+    "from": "n8n-conciliacion@example.test",
+    "to": [
+      "operaciones@example.test"
+    ],
+    "date": "2026-10-03T06:32:06Z",
+    "size": 1493
+  },
+  "mail_text": "--------------------------------------------------------------------\nFalla en Conciliación de pagos asistida por IA con aprobación humana\n--------------------------------------------------------------------\n\n* Ejecución: *#19* (webhook)\n* Nodo: *Crear lote (API)*\n* Error: Your request is invalid or could not be processed by the service\n* Detalle: String should match pattern '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'\n\nAbrir la ejecución en n8n ( http://localhost:15678/workflow/reconIaAprob0001/executions/19 )\n\nMensaje sanitizado: sin tokens ni encabezados de autenticación.",
+  "nodes": [
+    {
+      "node": "Webhook: extracto bancario",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.596Z",
+      "execution_ms": 0,
+      "error": null
+    },
+    {
+      "node": "Validar y normalizar extracto",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.603Z",
+      "execution_ms": 9,
+      "error": null
+    },
+    {
+      "node": "¿Entrada válida?",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.619Z",
+      "execution_ms": 4,
+      "error": null
+    },
+    {
+      "node": "Responder 202: aceptado",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.634Z",
+      "execution_ms": 3,
+      "error": null
+    },
+    {
+      "node": "Preparar contexto y CSV",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.648Z",
+      "execution_ms": 8,
+      "error": null
+    },
+    {
+      "node": "Firmar JWT integración",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.661Z",
+      "execution_ms": 5,
+      "error": null
+    },
+    {
+      "node": "Firmar JWT analista",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.671Z",
+      "execution_ms": 4,
+      "error": null
+    },
+    {
+      "node": "Ingerir libro mayor (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.680Z",
+      "execution_ms": 36,
+      "error": null
+    },
+    {
+      "node": "Ingerir extracto bancario (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.722Z",
+      "execution_ms": 31,
+      "error": null
+    },
+    {
+      "node": "Verificar recibos de ingesta",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:06.759Z",
+      "execution_ms": 5,
+      "error": null
+    },
+    {
+      "node": "Crear lote (API)",
+      "runs": 1,
+      "status": "error",
+      "items": 0,
+      "started_at": "2026-10-03T06:32:06.772Z",
+      "execution_ms": 25,
+      "error": "Your request is invalid or could not be processed by the service"
+    }
+  ]
+}

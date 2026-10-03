@@ -1,0 +1,88 @@
+# n8n Community Edition + Mailpit para el workflow de conciliación asistida por IA.
+# Todo escucha sólo en 127.0.0.1. Los secretos de desarrollo vienen de .env (git-ignored).
+name: n8n-recon
+
+services:
+  n8n:
+    # n8n 2.41.6 (stable al 2026-10-02), fijado por digest del manifest multi-arquitectura.
+    image: n8nio/n8n:2.41.6@sha256:87e0bab2c93192e8dd885ff7b0697c22a1bd97489568a8c67cc140fd7dbb342d
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${N8N_HOST_PORT:-15678}:5678"
+    environment:
+      # La clave de cifrado entra como secreto de archivo, no como variable visible por $env.
+      N8N_ENCRYPTION_KEY_FILE: /run/secrets/n8n_encryption_key
+      N8N_HOST: localhost
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: http://localhost:${N8N_HOST_PORT:-15678}/
+      WEBHOOK_URL: http://localhost:${N8N_HOST_PORT:-15678}/
+      GENERIC_TIMEZONE: America/La_Paz
+      TZ: America/La_Paz
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_TEMPLATES_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_HIRING_BANNER_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_LOG_LEVEL: info
+      N8N_LOG_FORMAT: json
+      N8N_PUBLIC_API_DISABLED: "false"
+      N8N_PUBLIC_API_SWAGGERUI_DISABLED: "true"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "336"
+      # Los nodos Code leen sólo configuración no secreta (prefijo RECON_/OLLAMA_/MAIL_).
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      RECON_API_BASE_URL: ${RECON_API_BASE_URL:-http://host.docker.internal:18180}
+      RECON_JWT_KID: ${RECON_JWT_KID:?definir RECON_JWT_KID en .env (scripts/setup.ps1 lo completa)}
+      RECON_JWT_ISSUER: ${RECON_JWT_ISSUER:-recon-dev-idp}
+      RECON_JWT_AUDIENCE: ${RECON_JWT_AUDIENCE:-recon-api}
+      RECON_TENANT_PREFIX: ${RECON_TENANT_PREFIX:-n8n}
+      RECON_RUN_POLL_MAX: ${RECON_RUN_POLL_MAX:-30}
+      RECON_INVESTIGATION_TIMEOUT_S: ${RECON_INVESTIGATION_TIMEOUT_S:-90}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:7b}
+      OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-90000}
+      MAIL_FROM: ${MAIL_FROM:-n8n-conciliacion@example.test}
+      MAIL_REVIEWER: ${MAIL_REVIEWER:-revisor@example.test}
+      MAIL_OPS: ${MAIL_OPS:-operaciones@example.test}
+      RECON_FAULT_INJECTION: ${RECON_FAULT_INJECTION:-false}
+    secrets:
+      - n8n_encryption_key
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4@sha256:b68349e3a014b90c5610bfb26b2ae36f3892d7b8cf25ee140c6c71c98d2fcf48
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-18825}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-11825}:1025"
+    environment:
+      MP_MAX_MESSAGES: "500"
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+secrets:
+  n8n_encryption_key:
+    environment: N8N_ENCRYPTION_KEY
+
+volumes:
+  n8n_data:
+    name: n8n-recon-data

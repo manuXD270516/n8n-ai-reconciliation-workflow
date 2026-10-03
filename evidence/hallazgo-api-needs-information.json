@@ -1,0 +1,20 @@
+{
+  "hallazgo": "POST /v1/cases/{id}/decisions con decision=NEEDS_INFORMATION responde 500 (DataError) en la API de conciliación",
+  "causa_probable": "packages/store/src/recon_store/tables.py y migrations/versions/0006_cases.py: la columna status de recommendations es String(16) y 'NEEDS_INFORMATION' tiene 17 caracteres",
+  "n8n_execution_id": "10",
+  "n8n_status": "error",
+  "failed_node": "Registrar decisión (API)",
+  "error_message": "The service was not able to process your request",
+  "error_description": "Internal Server Error",
+  "api_log_lines": [
+    "{\"ts\": \"2026-10-03T06:27:37.503+00:00\", \"level\": \"INFO\", \"logger\": \"recon_api.access\", \"message\": \"request\", \"request_id\": \"b5c6dd16c66946eda5291315c4181b5b\", \"request_id_source\": \"generated\", \"method\": \"POST\", \"path\": \"/v1/cases/98e80e4f-8f7e-40a3-b84a-ed93704b5401/decisions\", \"status\": 500, \"duration_ms\": 28.8}",
+    "{\"ts\": \"2026-10-03T06:27:37.506+00:00\", \"level\": \"ERROR\", \"logger\": \"uvicorn.error\", \"message\": \"Exception in ASGI application\\n\", \"exc_type\": \"DataError\"}",
+    "{\"ts\": \"2026-10-03T06:27:37.507+00:00\", \"level\": \"INFO\", \"logger\": \"recon_api.access\", \"message\": \"request\", \"request_id\": \"fefdd183feff4115a515066032cc9f6e\", \"request_id_source\": \"generated\", \"method\": \"POST\", \"path\": \"/v1/cases/c5a98a1f-20b8-444f-ba48-81432c959f2f/decisions\", \"status\": 500, \"duration_ms\": 32.8}",
+    "{\"ts\": \"2026-10-03T06:27:37.508+00:00\", \"level\": \"ERROR\", \"logger\": \"uvicorn.error\", \"message\": \"Exception in ASGI application\\n\", \"exc_type\": \"DataError\"}",
+    "{\"ts\": \"2026-10-03T06:27:37.508+00:00\", \"level\": \"INFO\", \"logger\": \"recon_api.access\", \"message\": \"request\", \"request_id\": \"a76ed6cd485a4ec5a77ce601177fa0d9\", \"request_id_source\": \"generated\", \"method\": \"POST\", \"path\": \"/v1/cases/362f5a9d-4c20-4a16-96b5-6f0e27cb7957/decisions\", \"status\": 500, \"duration_ms\": 33.8}",
+    "{\"ts\": \"2026-10-03T06:27:37.508+00:00\", \"level\": \"ERROR\", \"logger\": \"uvicorn.error\", \"message\": \"Exception in ASGI application\\n\", \"exc_type\": \"DataError\"}",
+    "{\"ts\": \"2026-10-03T06:27:37.508+00:00\", \"level\": \"INFO\", \"logger\": \"recon_api.access\", \"message\": \"request\", \"request_id\": \"9b4a4f901e0a40459239b8152e875ff0\", \"request_id_source\": \"generated\", \"method\": \"POST\", \"path\": \"/v1/cases/827e9d11-29cf-4a63-94a4-274ca1fe23ad/decisions\", \"status\": 500, \"duration_ms\": 33.68}",
+    "{\"ts\": \"2026-10-03T06:27:37.509+00:00\", \"level\": \"ERROR\", \"logger\": \"uvicorn.error\", \"message\": \"Exception in ASGI application\\n\", \"exc_type\": \"DataError\"}"
+  ],
+  "accion_en_el_workflow": "Se retiró la opción \"Pedir más información\" del formulario hasta que la API se corrija. Los reintentos acotados (3 intentos) y el Error Trigger funcionaron."
+}

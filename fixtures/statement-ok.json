@@ -1,0 +1,24 @@
+{
+  "statement_id": "stmt-alfa-m01-20260901",
+  "provider_id": "prov-alfa",
+  "merchant_account": "merchant-01",
+  "currency": "USD",
+  "window_start": "2026-09-01T04:00:00Z",
+  "window_end": "2026-09-03T04:00:00Z",
+  "business_timezone": "America/La_Paz",
+  "cutoff_at": "2026-09-03T10:00:00Z",
+  "data_origin": "SYNTHETIC",
+  "statement_format": "csv",
+  "statement_csv": "source_record_id,payment_ref,operation,amount,currency,status,occurred_at,received_at\nalf-n8n-0001,pay-n8n-0001,CAPTURE,1250.00,USD,SETTLED,2026-09-01T09:12:00-04:00,2026-09-01T09:40:00-04:00\nalf-n8n-0002,pay-n8n-0002,CAPTURE,89.90,USD,SETTLED,2026-09-01T10:05:00-04:00,2026-09-01T10:31:00-04:00\nalf-n8n-0003,pay-n8n-0003,CAPTURE,4310.55,USD,SETTLED,2026-09-01T12:47:00-04:00,2026-09-01T13:02:00-04:00\nalf-n8n-0004,pay-n8n-0004,CAPTURE,15.00,USD,SETTLED,2026-09-01T15:20:00-04:00,2026-09-01T15:44:00-04:00\nalf-n8n-0005,pay-n8n-0005,CAPTURE,760.00,USD,SETTLED,2026-09-01T18:03:00-04:00,2026-09-01T18:25:00-04:00\nalf-n8n-0006,pay-n8n-0006,CAPTURE,2200.00,USD,SETTLED,2026-09-02T08:15:00-04:00,2026-09-02T08:52:00-04:00\nalf-n8n-0007,pay-n8n-0007,CAPTURE,989.99,USD,SETTLED,2026-09-02T09:30:00-04:00,2026-09-02T09:58:00-04:00\nalf-n8n-0008,pay-n8n-0008,CAPTURE,450.00,USD,DECLINED,2026-09-02T11:11:00-04:00,2026-09-02T11:20:00-04:00\nalf-n8n-0010,pay-n8n-0010,CAPTURE,75.25,USD,SETTLED,2026-09-02T16:40:00-04:00,2026-09-02T17:05:00-04:00\n",
+  "ledger": [
+    {"source_record_id": "led-n8n-0001", "payment_ref": "pay-n8n-0001", "attempt_ref": "pay-n8n-0001-a1", "operation": "CAPTURE", "amount": "1250.00", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-01T09:12:00-04:00", "received_at": "2026-09-01T09:13:00-04:00"},
+    {"source_record_id": "led-n8n-0002", "payment_ref": "pay-n8n-0002", "attempt_ref": "pay-n8n-0002-a1", "operation": "CAPTURE", "amount": "89.90", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-01T10:05:00-04:00", "received_at": "2026-09-01T10:06:00-04:00"},
+    {"source_record_id": "led-n8n-0003", "payment_ref": "pay-n8n-0003", "attempt_ref": "pay-n8n-0003-a1", "operation": "CAPTURE", "amount": "4310.55", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-01T12:47:00-04:00", "received_at": "2026-09-01T12:48:00-04:00"},
+    {"source_record_id": "led-n8n-0004", "payment_ref": "pay-n8n-0004", "attempt_ref": "pay-n8n-0004-a1", "operation": "CAPTURE", "amount": "15.00", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-01T15:20:00-04:00", "received_at": "2026-09-01T15:21:00-04:00"},
+    {"source_record_id": "led-n8n-0005", "payment_ref": "pay-n8n-0005", "attempt_ref": "pay-n8n-0005-a1", "operation": "CAPTURE", "amount": "760.00", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-01T18:03:00-04:00", "received_at": "2026-09-01T18:04:00-04:00"},
+    {"source_record_id": "led-n8n-0006", "payment_ref": "pay-n8n-0006", "attempt_ref": "pay-n8n-0006-a1", "operation": "CAPTURE", "amount": "2200.00", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-02T08:15:00-04:00", "received_at": "2026-09-02T08:16:00-04:00"},
+    {"source_record_id": "led-n8n-0007", "payment_ref": "pay-n8n-0007", "attempt_ref": "pay-n8n-0007-a1", "operation": "CAPTURE", "amount": "999.99", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-02T09:30:00-04:00", "received_at": "2026-09-02T09:31:00-04:00"},
+    {"source_record_id": "led-n8n-0008", "payment_ref": "pay-n8n-0008", "attempt_ref": "pay-n8n-0008-a1", "operation": "CAPTURE", "amount": "450.00", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-02T11:11:00-04:00", "received_at": "2026-09-02T11:12:00-04:00"},
+    {"source_record_id": "led-n8n-0009", "payment_ref": "pay-n8n-0009", "attempt_ref": "pay-n8n-0009-a1", "operation": "CAPTURE", "amount": "1300.00", "currency": "USD", "status": "POSTED", "occurred_at": "2026-09-02T14:25:00-04:00", "received_at": "2026-09-02T14:26:00-04:00"}
+  ]
+}

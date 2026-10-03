@@ -1,0 +1,1700 @@
+{
+  "id": "reconIaAprob0001",
+  "name": "Conciliación de pagos asistida por IA con aprobación humana",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 1. Entrada y validación\nWebhook POST `/webhook/conciliacion/extracto` (o Schedule opcional, desactivado). Valida y normaliza el extracto (CSV o JSON) y responde 400 con errores claros o 202 con el id de ejecución.",
+        "height": 470,
+        "width": 2500,
+        "color": 7
+      },
+      "id": "3e319c20-14ef-4852-af25-6f25f8714179",
+      "name": "Nota 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "conciliacion/extracto",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6f7ba735-7eb2-443d-a619-ecd8b75327a1",
+      "name": "Webhook: extracto bancario",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "e67d439d-ac53-4adf-ab40-f9e860ed53c2"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "aebf7f23-9e49-4d63-a3df-8dc1977fa932",
+      "name": "Schedule (opcional)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Extracto programado (demo sintética)\".\n// Camino opcional del Schedule Trigger (desactivado por defecto). En producción aquí iría la\n// descarga del extracto (SFTP/API bancaria); en esta demo se genera un extracto sintético\n// mínimo de prov-alfa para el día anterior, con el mismo contrato que el webhook.\n\nconst day = new Date(Date.now() - 86400000);\nconst ymd = day.toISOString().slice(0, 10);\nconst start = `${ymd}T04:00:00Z`;\nconst end = new Date(Date.parse(start) + 86400000).toISOString().replace('.000', '');\nconst cutoff = new Date(Date.parse(end) + 6 * 3600000).toISOString().replace('.000', '');\nconst at = (h) => new Date(Date.parse(start) + h * 3600000).toISOString().replace('.000', '');\nconst ref = (n) => `pay-sch-${ymd.replace(/-/g, '')}-${n}`;\nreturn [{\n  json: {\n    origin: 'schedule',\n    body: {\n      statement_id: `stmt-sch-${ymd}`,\n      provider_id: 'prov-alfa',\n      merchant_account: 'merchant-01',\n      currency: 'USD',\n      window_start: start,\n      window_end: end,\n      business_timezone: 'America/La_Paz',\n      cutoff_at: cutoff,\n      statement: [\n        { source_record_id: `alf-sch-${ymd}-1`, payment_ref: ref(1), operation: 'CAPTURE', amount: '120.00', currency: 'USD', status: 'SETTLED', occurred_at: at(2), received_at: at(3) },\n        { source_record_id: `alf-sch-${ymd}-2`, payment_ref: ref(2), operation: 'CAPTURE', amount: '89.50', currency: 'USD', status: 'SETTLED', occurred_at: at(5), received_at: at(6) },\n      ],\n      ledger: [\n        { source_record_id: `led-sch-${ymd}-1`, payment_ref: ref(1), operation: 'CAPTURE', amount: '120.00', currency: 'USD', status: 'POSTED', occurred_at: at(2), received_at: at(2) },\n        { source_record_id: `led-sch-${ymd}-2`, payment_ref: ref(2), operation: 'CAPTURE', amount: '95.50', currency: 'USD', status: 'POSTED', occurred_at: at(5), received_at: at(5) },\n      ],\n    },\n  },\n}];\n"
+      },
+      "id": "8f10e0e1-d6d5-4fab-ac14-be60ed378788",
+      "name": "Extracto programado (demo sintética)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Validar y normalizar extracto\" (Run Once for All Items).\n// Valida el payload del webhook (o del Schedule), normaliza filas del extracto bancario\n// (CSV o JSON) y del libro mayor, y devuelve { valid, errors, warnings, ... }.\n// No llama a ninguna API: sólo reglas determinísticas.\n\nconst MAX_ROWS = 500;\nconst ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;\nconst TS_RE = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d{1,6})?)?(Z|[+-]\\d{2}:\\d{2})$/;\nconst AMOUNT_RE = /^-?\\d{1,12}(\\.\\d{1,2})?$/;\nconst CURRENCIES = ['USD', 'BOB'];\nconst LEDGER_VOCAB = {\n  statuses: ['PENDING', 'POSTED', 'FAILED', 'REVERSED'],\n  operations: ['AUTH', 'CAPTURE', 'REFUND', 'CHARGEBACK'],\n};\n// Vocabularios del proveedor tal como los acepta la API (mappings/v1).\nconst PROVIDER_VOCAB = {\n  'prov-alfa': { statuses: ['SETTLED', 'PENDING', 'DECLINED', 'REVERSED'], operations: ['AUTHORIZE', 'CAPTURE', 'REFUND', 'DISPUTE'] },\n  'prov-beta': { statuses: ['OK', 'WAIT', 'KO', 'VOID'], operations: ['AUT', 'CAP', 'REF', 'CBK'] },\n};\nconst ROW_FIELDS = ['source_record_id', 'payment_ref', 'operation', 'amount', 'currency', 'status', 'occurred_at', 'received_at'];\nconst FAULTS = ['ollama_invalid_json', 'ollama_unreachable', 'api_error'];\n\nconst errors = [];\nconst warnings = [];\nconst err = (field, message, row) => errors.push(row === undefined ? { field, message } : { field, row, message });\n\nfunction parseCsv(text) {\n  // CSV simple con comillas dobles (RFC 4180 básico). Devuelve { header, rows }.\n  const lines = [];\n  let field = '';\n  let row = [];\n  let quoted = false;\n  for (let i = 0; i < text.length; i++) {\n    const c = text[i];\n    if (quoted) {\n      if (c === '\"' && text[i + 1] === '\"') { field += '\"'; i++; }\n      else if (c === '\"') quoted = false;\n      else field += c;\n    } else if (c === '\"') quoted = true;\n    else if (c === ',') { row.push(field); field = ''; }\n    else if (c === '\\n' || c === '\\r') {\n      if (c === '\\r' && text[i + 1] === '\\n') i++;\n      row.push(field); field = '';\n      if (row.some((v) => v.trim() !== '')) lines.push(row);\n      row = [];\n    } else field += c;\n  }\n  row.push(field);\n  if (row.some((v) => v.trim() !== '')) lines.push(row);\n  if (quoted) throw new Error('comillas sin cerrar');\n  const [header = [], ...data] = lines;\n  return {\n    header: header.map((h) => h.trim()),\n    rows: data.map((cells) => cells),\n  };\n}\n\nfunction toRows(name, csvText, jsonRows) {\n  if (typeof csvText === 'string' && csvText.trim() !== '') {\n    let parsed;\n    try { parsed = parseCsv(csvText); } catch (e) { err(`${name}_csv`, `CSV ilegible: ${e.message}`); return []; }\n    const missing = ROW_FIELDS.filter((f) => !parsed.header.includes(f));\n    if (missing.length) { err(`${name}_csv`, `faltan columnas: ${missing.join(', ')}`); return []; }\n    return parsed.rows.map((cells, i) => {\n      if (cells.length !== parsed.header.length) {\n        err(`${name}_csv`, `la fila tiene ${cells.length} columnas y el encabezado ${parsed.header.length}`, i + 1);\n      }\n      return Object.fromEntries(parsed.header.map((h, j) => [h, (cells[j] ?? '').trim()]));\n    });\n  }\n  if (Array.isArray(jsonRows)) return jsonRows;\n  err(name, `se requiere \"${name}\" (arreglo JSON) o \"${name}_csv\" (texto CSV)`);\n  return [];\n}\n\nfunction parseTs(value) {\n  if (typeof value !== 'string' || !TS_RE.test(value)) return null;\n  const d = new Date(value);\n  return Number.isNaN(d.getTime()) ? null : d;\n}\n\nfunction normalizeRows(name, rows, vocab, header, windowStart, windowEnd) {\n  if (rows.length === 0) err(name, 'no hay filas');\n  if (rows.length > MAX_ROWS) err(name, `máximo ${MAX_ROWS} filas por extracto (llegaron ${rows.length})`);\n  const seen = new Set();\n  const out = [];\n  rows.slice(0, MAX_ROWS).forEach((raw, i) => {\n    const n = i + 1;\n    if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) { err(name, 'la fila debe ser un objeto', n); return; }\n    const r = {};\n    for (const f of ROW_FIELDS) r[f] = raw[f] === undefined || raw[f] === null ? '' : String(raw[f]).trim();\n    r.attempt_ref = raw.attempt_ref ? String(raw.attempt_ref).trim() : '';\n    r.revision = raw.revision === undefined || raw.revision === '' ? '1' : String(raw.revision).trim();\n    for (const f of ROW_FIELDS) if (r[f] === '') err(`${name}.${f}`, 'obligatorio', n);\n    if (r.source_record_id && !ID_RE.test(r.source_record_id)) err(`${name}.source_record_id`, 'formato inválido', n);\n    if (r.payment_ref && !ID_RE.test(r.payment_ref)) err(`${name}.payment_ref`, 'formato inválido', n);\n    if (r.attempt_ref && !ID_RE.test(r.attempt_ref)) err(`${name}.attempt_ref`, 'formato inválido', n);\n    if (!/^[1-9]\\d{0,5}$/.test(r.revision)) err(`${name}.revision`, 'debe ser un entero positivo', n);\n    if (seen.has(`${r.source_record_id}@${r.revision}`)) err(`${name}.source_record_id`, `duplicado: ${r.source_record_id}`, n);\n    seen.add(`${r.source_record_id}@${r.revision}`);\n    r.operation = r.operation.toUpperCase();\n    r.status = r.status.toUpperCase();\n    r.currency = r.currency.toUpperCase();\n    if (r.operation && !vocab.operations.includes(r.operation)) err(`${name}.operation`, `\"${r.operation}\" no está en ${vocab.operations.join('/')}`, n);\n    if (r.status && !vocab.statuses.includes(r.status)) err(`${name}.status`, `\"${r.status}\" no está en ${vocab.statuses.join('/')}`, n);\n    if (r.amount) {\n      const a = r.amount.replace(/\\s/g, '');\n      if (!AMOUNT_RE.test(a)) err(`${name}.amount`, `monto inválido \"${r.amount}\" (usar punto decimal, máx. 2 decimales)`, n);\n      else r.amount = Number(a).toFixed(2);\n    }\n    if (r.currency && r.currency !== header.currency) err(`${name}.currency`, `moneda ${r.currency} distinta de la del extracto (${header.currency})`, n);\n    const occurred = parseTs(r.occurred_at);\n    if (r.occurred_at && !occurred) err(`${name}.occurred_at`, 'fecha RFC 3339 con zona horaria requerida', n);\n    if (r.received_at && !parseTs(r.received_at)) err(`${name}.received_at`, 'fecha RFC 3339 con zona horaria requerida', n);\n    if (occurred && windowStart && windowEnd && (occurred < windowStart || occurred >= windowEnd)) {\n      warnings.push({ field: `${name}.occurred_at`, row: n, message: 'fuera de la ventana del lote; la API no la conciliará en este lote' });\n    }\n    out.push(r);\n  });\n  return out;\n}\n\nconst first = $input.first().json;\nconst body = first.body !== undefined ? first.body : first;\nconst origin = first.origin === 'schedule' ? 'schedule' : 'webhook';\nlet header = {};\nlet ledger = [];\nlet statement = [];\nlet testFault = null;\n\nconst contentType = String(first.headers?.['content-type'] ?? 'application/json').toLowerCase();\nif (origin === 'webhook' && !contentType.includes('application/json')) {\n  err('content-type', `se esperaba application/json (llegó \"${contentType}\"); el CSV va dentro del campo statement_csv`);\n} else if (body === null || typeof body !== 'object' || Array.isArray(body)) {\n  err('body', 'se esperaba un objeto JSON (Content-Type: application/json)');\n} else {\n  header = {\n    statement_id: String(body.statement_id ?? '').trim(),\n    provider_id: String(body.provider_id ?? '').trim(),\n    merchant_account: String(body.merchant_account ?? '').trim(),\n    currency: String(body.currency ?? '').trim().toUpperCase(),\n    window_start: String(body.window_start ?? '').trim(),\n    window_end: String(body.window_end ?? '').trim(),\n    business_timezone: String(body.business_timezone ?? 'America/La_Paz').trim(),\n    cutoff_at: String(body.cutoff_at ?? '').trim(),\n  };\n  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{2,48}$/.test(header.statement_id)) err('statement_id', 'obligatorio, 3-49 caracteres [A-Za-z0-9._-]');\n  if (!PROVIDER_VOCAB[header.provider_id]) err('provider_id', `proveedor desconocido; válidos: ${Object.keys(PROVIDER_VOCAB).join(', ')}`);\n  if (!ID_RE.test(header.merchant_account)) err('merchant_account', 'obligatorio, formato [A-Za-z0-9._:-]');\n  if (!CURRENCIES.includes(header.currency)) err('currency', `moneda no soportada; válidas: ${CURRENCIES.join(', ')}`);\n  if (!/^[A-Za-z]+\\/[A-Za-z_]+$/.test(header.business_timezone)) err('business_timezone', 'zona IANA inválida');\n  const ws = parseTs(header.window_start);\n  const we = parseTs(header.window_end);\n  const co = parseTs(header.cutoff_at);\n  if (!ws) err('window_start', 'fecha RFC 3339 con zona horaria requerida');\n  if (!we) err('window_end', 'fecha RFC 3339 con zona horaria requerida');\n  if (!co) err('cutoff_at', 'fecha RFC 3339 con zona horaria requerida');\n  if (ws && we && we <= ws) err('window_end', 'debe ser posterior a window_start');\n  if (we && co && co < we) err('cutoff_at', 'no puede ser anterior a window_end');\n  if (ws && we && we - ws > 31 * 86400000) err('window_end', 'la ventana no puede superar 31 días');\n\n  if (body.test_fault !== undefined && body.test_fault !== null) {\n    if ($env.RECON_FAULT_INJECTION !== 'true') err('test_fault', 'inyección de fallas deshabilitada en este entorno');\n    else if (!FAULTS.includes(body.test_fault)) err('test_fault', `valores permitidos: ${FAULTS.join(', ')}`);\n    else testFault = body.test_fault;\n  }\n\n  const vocab = PROVIDER_VOCAB[header.provider_id];\n  if (vocab && CURRENCIES.includes(header.currency)) {\n    statement = normalizeRows('statement', toRows('statement', body.statement_csv, body.statement), vocab, header, ws, we);\n    ledger = normalizeRows('ledger', toRows('ledger', body.ledger_csv, body.ledger), LEDGER_VOCAB, header, ws, we);\n  }\n}\n\nconst valid = errors.length === 0;\nreturn [{\n  json: {\n    valid,\n    origin,\n    errors: errors.slice(0, 50),\n    error_count: errors.length,\n    warnings: warnings.slice(0, 50),\n    header,\n    ledger_rows: valid ? ledger : [],\n    statement_rows: valid ? statement : [],\n    counts: { ledger: ledger.length, statement: statement.length },\n    test_fault: testFault,\n    received_at: new Date().toISOString(),\n  },\n}];\n"
+      },
+      "id": "cd616d98-ee36-4801-aa76-5ce5c8c07dc1",
+      "name": "Validar y normalizar extracto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fc0c15b7-3786-4cb8-ad6b-74c859c9b2cc",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "c9dab69a-50d4-4346-aa85-a70c766868bd",
+      "name": "¿Entrada válida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'rejected', message: 'El extracto no pasó la validación; no se llamó a la API.', error_count: $json.error_count, errors: $json.errors, warnings: $json.warnings }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "a5b26cb8-b783-4b0c-a493-5388a3a68f74",
+      "name": "Responder 400: entrada inválida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'accepted', execution_id: $execution.id, statement_id: $json.header.statement_id, transactions: $json.counts.ledger + $json.counts.statement, warnings: $json.warnings, next: 'Conciliación en curso; el revisor recibirá un correo de aprobación y el reporte final llegará por correo.' }) }}",
+        "options": {
+          "responseCode": 202
+        }
+      },
+      "id": "d3e44d4c-3bcf-422d-a899-5ce7f3c2f585",
+      "name": "Responder 202: aceptado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Preparar contexto y CSV\" (Run Once for All Items).\n// Arma el tenant aislado de esta ejecución, el id de lote, los CSV canónicos que exige la\n// API (13 columnas, mismo orden) y los claims de los JWT de servicio (TTL corto).\n\nconst v = $input.first().json;\nconst h = v.header;\nconst COLUMNS = ['tenant_id', 'source_record_id', 'revision', 'provider_id', 'merchant_account', 'operation',\n  'payment_ref', 'attempt_ref', 'amount', 'currency', 'status', 'occurred_at', 'received_at'];\n// Un tenant por ejecución: los datos de cada corrida quedan aislados en la API.\nconst tenant = `${$env.RECON_TENANT_PREFIX || 'n8n'}-x${$execution.id}`;\n// Falla inyectada 'api_error' (sólo con RECON_FAULT_INJECTION=true): un batch_id que la API\n// rechaza con 422, para ejercitar el camino de error real (nodo falla -> Error Trigger).\nconst batchId = v.test_fault === 'api_error' ? 'id inválido (falla inyectada)' : `b-${h.statement_id}`.slice(0, 120);\n\nconst cell = (s) => (/[\",\\n]/.test(s) ? `\"${s.replace(/\"/g, '\"\"')}\"` : s);\nconst toCsv = (rows) => [COLUMNS.join(',')]\n  .concat(rows.map((r) => COLUMNS.map((c) => cell(String({\n    ...r, tenant_id: tenant, provider_id: h.provider_id, merchant_account: h.merchant_account,\n  }[c] ?? ''))).join(',')))\n  .join('\\n') + '\\n';\n\nconst now = Math.floor(Date.now() / 1000);\nconst claims = (sub, role) => ({\n  iss: $env.RECON_JWT_ISSUER || 'recon-dev-idp',\n  aud: $env.RECON_JWT_AUDIENCE || 'recon-api',\n  sub, tenant_id: tenant, roles: [role], iat: now, nbf: now, exp: now + 900,\n});\n\nreturn [{\n  json: {\n    tenant,\n    batch_id: batchId,\n    header: h,\n    test_fault: v.test_fault,\n    counts: v.counts,\n    warnings: v.warnings,\n    ledger_csv: toCsv(v.ledger_rows),\n    statement_csv: toCsv(v.statement_rows),\n    // Montos y estados de entrada por referencia: base del grounding de la IA y del reporte.\n    by_ref: Object.fromEntries([\n      ...v.ledger_rows.map((r) => [r.payment_ref, null]),\n      ...v.statement_rows.map((r) => [r.payment_ref, null]),\n    ].map(([ref]) => [ref, {\n      ledger: v.ledger_rows.filter((r) => r.payment_ref === ref).map((r) => ({ amount: r.amount, status: r.status, operation: r.operation, occurred_at: r.occurred_at })),\n      statement: v.statement_rows.filter((r) => r.payment_ref === ref).map((r) => ({ amount: r.amount, status: r.status, operation: r.operation, occurred_at: r.occurred_at })),\n    }])),\n    claims: {\n      integration: claims('svc-n8n-ingest', 'integration'),\n      analyst: claims('svc-n8n-analyst', 'analyst'),\n    },\n    api: $env.RECON_API_BASE_URL,\n    started_at: v.received_at,\n    prepared_at: new Date().toISOString(),\n  },\n}];\n"
+      },
+      "id": "00ba90fd-e0cf-4563-abc1-6c662ef5a42e",
+      "name": "Preparar contexto y CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sign",
+        "useJson": true,
+        "claimsJson": "={{ JSON.stringify($('Preparar contexto y CSV').first().json.claims.integration) }}",
+        "options": {
+          "kid": "={{ $env.RECON_JWT_KID }}"
+        }
+      },
+      "id": "39f44bca-7672-4ce4-a9a8-c394ce539792",
+      "name": "Firmar JWT integración",
+      "type": "n8n-nodes-base.jwt",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        -20
+      ],
+      "credentials": {
+        "jwtAuth": {
+          "id": "reconJwtDevKey01",
+          "name": "Recon API - JWT dev (RS256)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sign",
+        "useJson": true,
+        "claimsJson": "={{ JSON.stringify($('Preparar contexto y CSV').first().json.claims.analyst) }}",
+        "options": {
+          "kid": "={{ $env.RECON_JWT_KID }}"
+        }
+      },
+      "id": "f74e8fe8-a0b5-4530-ad04-e439434bd8bb",
+      "name": "Firmar JWT analista",
+      "type": "n8n-nodes-base.jwt",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        -20
+      ],
+      "credentials": {
+        "jwtAuth": {
+          "id": "reconJwtDevKey01",
+          "name": "Recon API - JWT dev (RS256)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/artifacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT integración').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ source: 'internal_ledger', provider_id: $('Preparar contexto y CSV').first().json.header.provider_id, idempotency_key: $('Preparar contexto y CSV').first().json.tenant + '-ledger', content: $('Preparar contexto y CSV').first().json.ledger_csv }) }}"
+      },
+      "id": "5199f784-5d4a-4624-a7dd-7eeb7d0baeb1",
+      "name": "Ingerir libro mayor (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        -20
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/artifacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT integración').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ source: 'provider_report', provider_id: $('Preparar contexto y CSV').first().json.header.provider_id, idempotency_key: $('Preparar contexto y CSV').first().json.tenant + '-statement', content: $('Preparar contexto y CSV').first().json.statement_csv }) }}"
+      },
+      "id": "8fbb1af1-9bc7-42c4-aa53-aac399d5a980",
+      "name": "Ingerir extracto bancario (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        -20
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Verificar recibos de ingesta\".\n// La API devuelve un recibo por artefacto (aceptadas, duplicadas, conflictos, cuarentena).\n// Si una fuente no dejó ninguna fila utilizable, se corta el flujo con un error explícito.\n\nconst ledger = $('Ingerir libro mayor (API)').first().json;\nconst statement = $('Ingerir extracto bancario (API)').first().json;\nconst summarize = (r) => ({\n  artifact_id: r.artifact_id, replayed: r.replayed, row_count: r.row_count, accepted: r.accepted,\n  duplicates: r.duplicates, conflicts: r.conflicts, rejected: r.rejected,\n  rejections: (r.rejections || []).slice(0, 10),\n});\nconst receipts = { ledger: summarize(ledger), statement: summarize(statement) };\nfor (const [name, r] of Object.entries(receipts)) {\n  if ((r.accepted || 0) + (r.duplicates || 0) === 0) {\n    throw new Error(`La API no aceptó ninguna fila de ${name}: ${JSON.stringify(r.rejections)}`);\n  }\n}\nreturn [{ json: { receipts, ingested_at: new Date().toISOString() } }];\n"
+      },
+      "id": "77148d2a-044d-4fbf-a41b-c257512edda3",
+      "name": "Verificar recibos de ingesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Conciliación determinística (API fintech)\nCrea el lote, marca ambas fuentes completas, lanza el run (reglas `rules/v1`) y hace polling con límite (`RECON_RUN_POLL_MAX` x 1 s). Sólo reintenta llamadas idempotentes.",
+        "height": 470,
+        "width": 2700,
+        "color": 4
+      },
+      "id": "7709f41f-e87b-4385-aae7-7d3a3ac538af",
+      "name": "Nota 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/batches",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ batch_id: $('Preparar contexto y CSV').first().json.batch_id, provider_id: $('Preparar contexto y CSV').first().json.header.provider_id, merchant_account: $('Preparar contexto y CSV').first().json.header.merchant_account, currency: $('Preparar contexto y CSV').first().json.header.currency, window_start: $('Preparar contexto y CSV').first().json.header.window_start, window_end: $('Preparar contexto y CSV').first().json.header.window_end, business_timezone: $('Preparar contexto y CSV').first().json.header.business_timezone, cutoff_at: $('Preparar contexto y CSV').first().json.header.cutoff_at }) }}"
+      },
+      "id": "cd43d6af-0568-47ac-accb-eb16e427ca4b",
+      "name": "Crear lote (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/batches/{{ $('Preparar contexto y CSV').first().json.batch_id }}/sources/internal_ledger/complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT integración').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "e4f8e262-f6c1-4e22-a4ed-e3233a2798b1",
+      "name": "Cerrar fuente: libro mayor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        520
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/batches/{{ $('Preparar contexto y CSV').first().json.batch_id }}/sources/provider_report/complete",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT integración').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "4a518255-8b02-4802-ab9a-02c04390c42a",
+      "name": "Cerrar fuente: extracto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        520
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/batches/{{ $('Preparar contexto y CSV').first().json.batch_id }}/runs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "36cf693d-6c7c-455a-ada4-88e9d54310ba",
+      "name": "Lanzar run de conciliación (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      },
+      "id": "884ae1fc-eb14-4a92-ab18-41eb2a28493d",
+      "name": "Esperar 1 s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        520
+      ],
+      "webhookId": "b8e2cc32-bebb-4dd6-ae3f-7b4cab528d93"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/runs/{{ $('Lanzar run de conciliación (API)').first().json.run_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "09224dfe-ecbd-4a2f-a0e7-8d421b3ec9f7",
+      "name": "Consultar estado del run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        520
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4890e0e9-f114-4d10-a32c-b04df51cd73f",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "98e63b35-f703-4f42-a185-da9a1e407222",
+      "name": "¿Run completado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "803b3366-fd40-4c4d-a062-8ef06500fe61",
+              "leftValue": "={{ $runIndex < Number($env.RECON_RUN_POLL_MAX || 30) && $json.status !== 'failed' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "7837da24-c188-460e-a1d6-1eb8ba64cd2c",
+      "name": "¿Quedan intentos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "=El run {{ $json.run_id }} no completó dentro del límite de polling (estado: {{ $json.status }})."
+      },
+      "id": "6967c496-ebfe-403c-ab83-29a4ae172845",
+      "name": "Error: run sin completar",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/runs/{{ $json.run_id }}/results?limit=500",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "be8fe0f5-518b-443d-a538-972dfcc982b1",
+      "name": "Leer resultados del run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        500
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Separar excepciones\" (Run Once for All Items).\n// Resume el run (conteos por estado) y emite un ítem por partida no conciliada. Las\n// conciliadas EXACT no pasan a investigación. Si no hay excepciones emite un único ítem\n// con exception = null para que el flujo vaya directo al reporte.\n\nconst ctx = $('Preparar contexto y CSV').first().json;\nconst run = $('¿Run completado?').first().json;\nconst items = $input.first().json.items || [];\nconst counts = {};\nfor (const it of items) counts[it.match_status] = (counts[it.match_status] || 0) + 1;\nconst exceptions = items.filter((it) => it.match_status !== 'EXACT');\nconst summary = {\n  run_id: run.run_id,\n  run_number: run.run_number,\n  ruleset_version: run.ruleset_version,\n  snapshot_hash: run.snapshot_hash,\n  observation_count: run.observation_count,\n  requested_at: run.requested_at,\n  completed_at: run.completed_at,\n  results: items.length,\n  counts,\n  exact: counts.EXACT || 0,\n  exceptions: exceptions.length,\n};\nif (exceptions.length === 0) return [{ json: { exception: null, run: summary } }];\nreturn exceptions.map((it) => ({\n  json: {\n    exception: {\n      run_id: run.run_id,\n      ordinal: it.ordinal,\n      payment_ref: it.payment_ref,\n      operation_type: it.operation_type,\n      match_status: it.match_status,\n      rule: it.rule,\n      discrepancy_types: it.discrepancy_types,\n      amount_difference_minor: it.amount_difference_minor,\n      explanation: it.explanation,\n      input: ctx.by_ref[it.payment_ref] || { ledger: [], statement: [] },\n    },\n    run: summary,\n  },\n}));\n"
+      },
+      "id": "8a2f3ce0-6268-4123-aa36-3b128c781e5b",
+      "name": "Separar excepciones",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "137ee4f6-b28f-4be7-abf2-93ae3f581b3f",
+              "leftValue": "={{ $json.exception !== null }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "f7379662-d600-491d-aedd-5779448732ea",
+      "name": "¿Hay excepciones?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Excepciones: investigación (API) + IA local acotada\nPor cada partida no conciliada: abre el caso, pide la investigación de la API (borrador sin efecto operativo), clasifica con Ollama `qwen2.5:7b` (JSON Schema + validación + fallback determinístico) y registra una **propuesta** del analista de servicio. La IA nunca decide.",
+        "height": 470,
+        "width": 2700,
+        "color": 6
+      },
+      "id": "664adecc-5a6a-4533-a0dc-797c906b4ed6",
+      "name": "Nota 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/runs/{{ $json.exception.run_id }}/results/{{ $json.exception.ordinal }}/cases",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "96b32a80-a337-498b-aa71-68dff633cf26",
+      "name": "Abrir caso (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        1040
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/runs/{{ $('Separar excepciones').item.json.exception.run_id }}/results/{{ $('Separar excepciones').item.json.exception.ordinal }}/investigations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "fc37ee17-b0c7-4c04-a788-f8ade7a9d7af",
+      "name": "Solicitar investigación (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        1040
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Esperar investigaciones (polling acotado)\" (Run Once for All Items).\n// Para cada excepción consulta GET /v1/investigations/{id} hasta un estado terminal o hasta\n// agotar el presupuesto de tiempo (RECON_INVESTIGATION_TIMEOUT_S). Si la API rechazó la\n// investigación (p. ej. 503 ai_disabled por kill switch) el caso sigue sin borrador.\n// La investigación de la API produce BORRADORES sin efecto operativo; no decide nada.\n\nconst TERMINAL = ['NOT_NEEDED', 'DRAFTED', 'ABSTAINED', 'ESCALATED', 'FAILED'];\nconst base = $env.RECON_API_BASE_URL;\nconst token = $('Firmar JWT analista').first().json.token;\nconst budgetMs = Number($env.RECON_INVESTIGATION_TIMEOUT_S || 90) * 1000;\nconst sleep = (ms) => new Promise((r) => setTimeout(r, ms));\nconst started = Date.now();\n\nconst inputs = $input.all();\nconst cases = $('Abrir caso (API)').all();\nconst exceptions = $('Separar excepciones').all();\nconst pending = new Map();\nconst results = inputs.map((it, i) => {\n  const accepted = it.json;\n  const caseOpened = cases[i].json;\n  const row = { ...exceptions[i].json, case_id: caseOpened.case_id, case_created: caseOpened.created };\n  if (!accepted || accepted.error || !accepted.investigation_id) {\n    const reason = accepted?.error?.message || accepted?.error || 'sin investigation_id';\n    return { ...row, investigation: { id: null, state: 'NOT_REQUESTED', error: String(reason).slice(0, 200) } };\n  }\n  pending.set(i, accepted.investigation_id);\n  return { ...row, investigation: { id: accepted.investigation_id, state: accepted.status || 'REQUESTED' } };\n});\n\nlet polls = 0;\nwhile (pending.size > 0 && Date.now() - started < budgetMs) {\n  for (const [i, id] of [...pending.entries()]) {\n    polls++;\n    let body;\n    try {\n      body = await this.helpers.httpRequest({\n        method: 'GET',\n        url: `${base}/v1/investigations/${id}`,\n        headers: { Authorization: `Bearer ${token}` },\n        json: true,\n        timeout: 10000,\n      });\n    } catch (e) {\n      continue; // error transitorio: se reintenta en la próxima vuelta dentro del presupuesto\n    }\n    if (TERMINAL.includes(body.state)) {\n      const draft = body.record?.draft || null;\n      results[i].investigation = {\n        id,\n        state: body.state,\n        model_kind: body.record?.model_kind || null,\n        model: body.record?.model || null,\n        reason: body.record?.reason || null,\n        review_result: draft?.review_result?.result || null,\n        recommended_next_step: draft?.recommended_next_step || null,\n        operational_effect: draft?.operational_effect || null,\n        confidence: draft?.confidence_assessment || null,\n        facts: (draft?.facts || []).map((f) => f.statement).slice(0, 6),\n        inferences: (draft?.inferences || []).map((f) => f.statement).slice(0, 4),\n        hypotheses: (draft?.hypotheses || []).map((f) => f.statement).slice(0, 4),\n        missing_evidence: (draft?.missing_evidence || []).slice(0, 4),\n        elapsed_ms: Date.parse(body.updated_at) - Date.parse(body.created_at),\n      };\n      pending.delete(i);\n    }\n  }\n  if (pending.size > 0) await sleep(1500);\n}\nfor (const i of pending.keys()) results[i].investigation.state = 'TIMEOUT';\n\nconst waitedMs = Date.now() - started;\nreturn results.map((r, i) => ({\n  json: { ...r, investigation_wait_ms: waitedMs, investigation_polls: polls },\n  pairedItem: { item: i },\n}));\n"
+      },
+      "id": "24677c11-01e3-453a-a1dc-26d8659be803",
+      "name": "Esperar investigaciones (polling acotado)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Preparar prompt IA\" (Run Once for All Items).\n// Arma, por excepción, la llamada a Ollama /api/chat con un JSON Schema cuyo enum de\n// causas y acciones se restringe a lo permitido para esa discrepancia. El modelo sólo ve\n// hechos determinísticos (resultado del run, montos de entrada, borrador de la API).\n\nconst CAUSES_BY_DISCREPANCY = {\n  AMOUNT_MISMATCH: ['comision_o_liquidacion_neta', 'error_de_datos_o_mapeo', 'indeterminado'],\n  STATUS_MISMATCH: ['rechazo_o_reverso_del_proveedor', 'error_de_datos_o_mapeo', 'indeterminado'],\n  MISSING_EXTERNAL: ['rezago_o_ausencia_en_reporte_proveedor', 'rechazo_o_reverso_del_proveedor', 'indeterminado'],\n  MISSING_INTERNAL: ['registro_interno_faltante_o_tardio', 'duplicado_posible', 'error_de_datos_o_mapeo', 'indeterminado'],\n};\nconst ALL_CAUSES = [...new Set(Object.values(CAUSES_BY_DISCREPANCY).flat())];\nconst ACTIONS_BY_DISCREPANCY = {\n  AMOUNT_MISMATCH: ['REQUEST_PROVIDER_INFO', 'REQUEST_ADJUSTMENT_REVIEW'],\n  STATUS_MISMATCH: ['REQUEST_PROVIDER_INFO', 'REQUEST_ADJUSTMENT_REVIEW'],\n  MISSING_EXTERNAL: ['REQUEST_PROVIDER_INFO', 'REQUEST_ADJUSTMENT_REVIEW'],\n  MISSING_INTERNAL: ['REQUEST_ADJUSTMENT_REVIEW', 'REQUEST_PROVIDER_INFO'],\n};\n\nconst MEANING = {\n  AMOUNT_MISMATCH: 'el pago existe en ambas fuentes pero el monto del banco difiere del libro mayor',\n  STATUS_MISMATCH: 'el pago existe en ambas fuentes pero el estado del banco no coincide con el del libro mayor',\n  MISSING_EXTERNAL: 'el pago está registrado en el libro mayor interno pero NO aparece en el extracto del banco',\n  MISSING_INTERNAL: 'el banco informa el pago en su extracto pero NO está registrado en el libro mayor interno',\n};\n\nconst fault = $('Preparar contexto y CSV').first().json.test_fault;\nconst header = $('Preparar contexto y CSV').first().json.header;\nconst model = $env.OLLAMA_MODEL || 'qwen2.5:7b';\nconst url = fault === 'ollama_unreachable'\n  ? 'http://127.0.0.1:9/api/chat' // falla inyectada: puerto cerrado dentro del contenedor\n  : `${$env.OLLAMA_BASE_URL}/api/chat`;\n\nreturn $input.all().map((it, i) => {\n  const c = it.json;\n  const e = c.exception;\n  const primary = (e.discrepancy_types || [])[0] || e.match_status;\n  const causes = CAUSES_BY_DISCREPANCY[primary] || ALL_CAUSES;\n  let actions = ACTIONS_BY_DISCREPANCY[primary] || ['REQUEST_PROVIDER_INFO', 'REQUEST_ADJUSTMENT_REVIEW'];\n  if (e.match_status === 'PROBABLE') actions = ['ACCEPT_PROBABLE_MATCH', 'REQUEST_PROVIDER_INFO'];\n  const diff = e.amount_difference_minor === null || e.amount_difference_minor === undefined\n    ? null : (e.amount_difference_minor / 100).toFixed(2);\n  const facts = {\n    payment_ref: e.payment_ref,\n    moneda: header.currency,\n    proveedor: header.provider_id,\n    estado_conciliacion: e.match_status,\n    discrepancias: e.discrepancy_types,\n    significado: MEANING[primary] || null,\n    regla: e.rule,\n    explicacion_regla: e.explanation,\n    diferencia_proveedor_menos_libro: diff,\n    libro_mayor: e.input.ledger,\n    extracto_banco: e.input.statement,\n    investigacion_api: {\n      estado: c.investigation.state,\n      revision: c.investigation.review_result || null,\n      siguiente_paso_sugerido: c.investigation.recommended_next_step || null,\n      hechos: c.investigation.facts || [],\n      hipotesis: c.investigation.hypotheses || [],\n    },\n  };\n  const schema = {\n    type: 'object',\n    properties: {\n      causa_probable: { type: 'string', enum: causes },\n      accion_sugerida: { type: 'string', enum: actions },\n      resumen_es: { type: 'string' },\n    },\n    required: ['causa_probable', 'accion_sugerida', 'resumen_es'],\n  };\n  const invalidFault = fault === 'ollama_invalid_json';\n  const system = invalidFault\n    // Falla inyectada: se pide texto libre y se omite el schema para obtener una salida no JSON real.\n    ? 'Eres un analista. Responde con un párrafo breve en texto libre, sin JSON ni llaves.'\n    : [\n      'Eres un asistente de conciliación de pagos. Tu salida es un BORRADOR para un revisor humano:',\n      'no apruebas ni rechazas nada. Usa sólo los datos entregados; no inventes montos, fechas ni causas.',\n      'Clasifica la excepción eligiendo causa_probable y accion_sugerida SOLO de los valores permitidos,',\n      'Respeta el campo significado: indica en qué fuente falta o difiere el pago.',\n      `y escribe resumen_es: 2 o 3 frases en español que incluyan el payment_ref ${e.payment_ref} y los montos`,\n      'exactamente como aparecen (dos decimales). Responde únicamente con el objeto JSON.',\n    ].join(' ');\n  const body = {\n    model,\n    stream: false,\n    options: { temperature: 0, num_predict: 400 },\n    messages: [\n      { role: 'system', content: system },\n      { role: 'user', content: `Excepción a clasificar:\\n${JSON.stringify(facts, null, 2)}` },\n    ],\n  };\n  if (!invalidFault) body.format = schema;\n  return {\n    json: { ...c, ai_started_at: new Date().toISOString(), ai_request: { url, body, allowed: { causes, actions }, facts } },\n    pairedItem: { item: i },\n  };\n});\n"
+      },
+      "id": "c2249bc0-0aaa-4c6c-a14b-cdf8bb42534f",
+      "name": "Preparar prompt IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.ai_request.url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.ai_request.body) }}",
+        "options": {
+          "timeout": "={{ Number($env.OLLAMA_TIMEOUT_MS || 90000) }}",
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 0
+            }
+          }
+        }
+      },
+      "id": "e7b37916-6729-4b46-a9e7-4da6b9a3d040",
+      "name": "Clasificar con Ollama (qwen2.5:7b)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        1040
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Validar salida IA (o fallback)\" (Run Once for All Items).\n// Valida la respuesta de Ollama: JSON parseable, enums permitidos para la discrepancia,\n// resumen en rango, menciona el payment_ref, no contiene montos que no estén en los datos y\n// no contradice la discrepancia determinística. La prioridad la fija una regla, no la IA.\n// Si algo falla (Ollama caído, timeout, JSON inválido, valores fuera de rango), usa un\n// fallback determinístico. En ambos casos el resultado es una PROPUESTA: decide un humano.\n\nconst prepared = $('Preparar prompt IA').all();\nconst header = $('Preparar contexto y CSV').first().json.header;\nconst model = $env.OLLAMA_MODEL || 'qwen2.5:7b';\n\nconst FALLBACK_ACTION = {\n  AMOUNT_MISMATCH: 'REQUEST_PROVIDER_INFO',\n  STATUS_MISMATCH: 'REQUEST_PROVIDER_INFO',\n  MISSING_EXTERNAL: 'REQUEST_PROVIDER_INFO',\n  MISSING_INTERNAL: 'REQUEST_ADJUSTMENT_REVIEW',\n};\nconst DESCRIPTION = {\n  AMOUNT_MISMATCH: 'el monto del banco difiere del libro mayor',\n  STATUS_MISMATCH: 'el estado informado por el banco no coincide con el del libro mayor',\n  MISSING_EXTERNAL: 'el pago está en el libro mayor pero no aparece en el extracto bancario',\n  MISSING_INTERNAL: 'el banco informa un pago que no está registrado en el libro mayor',\n};\n\nfunction knownAmounts(e) {\n  const set = new Set();\n  for (const r of [...e.input.ledger, ...e.input.statement]) set.add(Number(r.amount).toFixed(2));\n  if (e.amount_difference_minor !== null && e.amount_difference_minor !== undefined) {\n    set.add(Math.abs(e.amount_difference_minor / 100).toFixed(2));\n  }\n  return set;\n}\n\n// Prioridad por regla (no por IA): alta si falta el registro interno o el monto afectado es >= 1000.\nfunction priority(e) {\n  const primary = (e.discrepancy_types || [])[0] || e.match_status;\n  const amounts = [...e.input.ledger, ...e.input.statement].map((r) => Math.abs(Number(r.amount)));\n  const maxAmount = amounts.length ? Math.max(...amounts) : 0;\n  return primary === 'MISSING_INTERNAL' || maxAmount >= 1000 ? 'alta' : 'media';\n}\n\n// Contradicciones evidentes entre el resumen y la discrepancia determinística.\nconst CONTRADICTIONS = {\n  MISSING_EXTERNAL: /(falta|sin|no (tiene|existe|hay|figura|aparece|está)).{0,30}(registro interno|libro mayor)/i,\n  MISSING_INTERNAL: /(falta|sin|no (tiene|existe|hay|figura|aparece|está)).{0,30}(extracto|banco|proveedor)/i,\n};\n\nfunction fallback(e, reasons) {\n  const primary = (e.discrepancy_types || [])[0] || e.match_status;\n  const diff = e.amount_difference_minor ? Math.abs(e.amount_difference_minor / 100) : 0;\n  const prioridad = priority(e);\n  const l = e.input.ledger[0];\n  const s = e.input.statement[0];\n  const parts = [`${e.payment_ref}: ${DESCRIPTION[primary] || `resultado ${e.match_status}`}.`];\n  if (l) parts.push(`Libro mayor: ${l.amount} ${header.currency} (${l.status}).`);\n  if (s) parts.push(`Banco: ${s.amount} ${header.currency} (${s.status}).`);\n  if (diff) parts.push(`Diferencia: ${diff.toFixed(2)} ${header.currency}.`);\n  parts.push('Resumen generado por reglas determinísticas (sin IA); requiere revisión humana.');\n  return {\n    source: 'fallback',\n    model: null,\n    valid: false,\n    reasons,\n    causa_probable: 'indeterminado',\n    accion_sugerida: e.match_status === 'PROBABLE' ? 'REQUEST_PROVIDER_INFO' : (FALLBACK_ACTION[primary] || 'REQUEST_PROVIDER_INFO'),\n    prioridad,\n    resumen_es: parts.join(' '),\n  };\n}\n\nfunction validate(content, ctx) {\n  const reasons = [];\n  let out;\n  try {\n    out = JSON.parse(content);\n  } catch (err) {\n    return { reasons: ['json_invalido'] };\n  }\n  if (!out || typeof out !== 'object' || Array.isArray(out)) return { reasons: ['no_es_objeto'] };\n  const { causes, actions } = ctx.ai_request.allowed;\n  if (!causes.includes(out.causa_probable)) reasons.push('causa_fuera_de_enum');\n  if (!actions.includes(out.accion_sugerida)) reasons.push('accion_no_permitida');\n  const summary = typeof out.resumen_es === 'string' ? out.resumen_es.trim() : '';\n  const primary = (ctx.exception.discrepancy_types || [])[0];\n  if (CONTRADICTIONS[primary] && CONTRADICTIONS[primary].test(summary)) reasons.push('resumen_contradice_discrepancia');\n  if (summary.length < 40 || summary.length > 700) reasons.push('resumen_longitud');\n  if (!summary.includes(ctx.exception.payment_ref)) reasons.push('resumen_sin_payment_ref');\n  const known = knownAmounts(ctx.exception);\n  const normalized = summary.replace(/(\\d),(\\d{3})(?!\\d)/g, '$1$2');\n  const mentioned = (normalized.match(/\\d+[.,]\\d{2}(?!\\d)/g) || []).map((m) => Number(m.replace(',', '.')).toFixed(2));\n  const invented = mentioned.filter((m) => !known.has(m));\n  if (invented.length) reasons.push(`montos_no_respaldados:${invented.join('|')}`);\n  return {\n    reasons,\n    out: {\n      causa_probable: out.causa_probable,\n      accion_sugerida: out.accion_sugerida,\n      prioridad: priority(ctx.exception),\n      resumen_es: summary,\n    },\n  };\n}\n\nreturn $input.all().map((it, i) => {\n  const ctx = prepared[i].json;\n  const res = it.json;\n  let ai;\n  const latency = res.total_duration ? Math.round(res.total_duration / 1e6) : null;\n  if (res.error || !res.message || typeof res.message.content !== 'string') {\n    const msg = String(res.error?.message || res.error || 'respuesta vacía').slice(0, 160);\n    ai = fallback(ctx.exception, [`ollama_no_disponible: ${msg}`]);\n  } else {\n    const { reasons, out } = validate(res.message.content, ctx);\n    if (reasons.length === 0) {\n      ai = { source: 'ollama', model, valid: true, reasons: [], latency_ms: latency, eval_count: res.eval_count ?? null, ...out };\n    } else {\n      ai = { ...fallback(ctx.exception, reasons), latency_ms: latency, rejected_output_excerpt: res.message.content.slice(0, 240) };\n    }\n  }\n  const tag = ai.source === 'ollama'\n    ? `[Borrador IA local ${model}; requiere revisión humana]`\n    : `[Fallback determinístico: ${ai.reasons.join(', ').slice(0, 160)}]`;\n  const rationale = `${tag} ${ai.resumen_es}`.slice(0, 1990);\n  const { ai_request: request, ...rest } = ctx;\n  return {\n    json: { ...rest, ai: { ...ai, rationale }, ai_facts: request.facts, ai_validated_at: new Date().toISOString() },\n    pairedItem: { item: i },\n  };\n});\n"
+      },
+      "id": "aeb0a4ec-62d5-42e7-a12b-3cabdc331665",
+      "name": "Validar salida IA (o fallback)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/cases/{{ $json.case_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "56c74429-8b82-4fd5-a183-2bf119fd6ba0",
+      "name": "Leer caso (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        1040
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/cases/{{ $('Validar salida IA (o fallback)').item.json.case_id }}/recommendations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT analista').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: $('Validar salida IA (o fallback)').item.json.ai.accion_sugerida, rationale: $('Validar salida IA (o fallback)').item.json.ai.rationale, expected_version: $json.version, investigation_id: ($('Validar salida IA (o fallback)').item.json.investigation.state === 'DRAFTED' && $('Validar salida IA (o fallback)').item.json.investigation.review_result === 'SUPPORTED') ? $('Validar salida IA (o fallback)').item.json.investigation.id : null }) }}"
+      },
+      "id": "5d03dc7a-2059-444b-a9b0-35120ee34b94",
+      "name": "Proponer recomendación (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Consolidar para revisión humana\" (Run Once for All Items -> 1 ítem).\n// Junta casos, recomendaciones (propuestas por el analista de servicio) y el resumen de la\n// IA o del fallback; arma el HTML del correo y el texto del formulario de aprobación.\n\nconst ctx = $('Preparar contexto y CSV').first().json;\nconst classified = $('Validar salida IA (o fallback)').all();\nconst recs = $input.all();\nconst esc = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\n\nconst cases = recs.map((r, i) => {\n  const c = classified[i].json;\n  return {\n    case_id: c.case_id,\n    recommendation_id: r.json.recommendation_id,\n    recommendation_status: r.json.status,\n    payment_ref: c.exception.payment_ref,\n    ordinal: c.exception.ordinal,\n    match_status: c.exception.match_status,\n    discrepancy_types: c.exception.discrepancy_types,\n    amount_difference: c.exception.amount_difference_minor == null ? null : (c.exception.amount_difference_minor / 100).toFixed(2),\n    investigation: {\n      id: c.investigation.id,\n      state: c.investigation.state,\n      review_result: c.investigation.review_result || null,\n      model_kind: c.investigation.model_kind || null,\n      attached_to_recommendation: c.investigation.state === 'DRAFTED' && c.investigation.review_result === 'SUPPORTED',\n    },\n    ai: {\n      source: c.ai.source,\n      model: c.ai.model,\n      reasons: c.ai.reasons,\n      causa_probable: c.ai.causa_probable,\n      accion_sugerida: c.ai.accion_sugerida,\n      prioridad: c.ai.prioridad,\n      resumen_es: c.ai.resumen_es,\n      latency_ms: c.ai.latency_ms ?? null,\n    },\n  };\n});\n\nconst run = classified[0].json.run;\nconst aiOk = cases.filter((c) => c.ai.source === 'ollama').length;\nconst rows = cases.map((c) => `\n  <tr>\n    <td><code>${esc(c.payment_ref)}</code></td>\n    <td>${esc(c.match_status)}<br><small>${esc(c.discrepancy_types.join(', '))}</small></td>\n    <td>${esc(c.ai.accion_sugerida)}<br><small>prioridad ${esc(c.ai.prioridad)} · causa ${esc(c.ai.causa_probable)}</small></td>\n    <td>${esc(c.ai.resumen_es)}<br><small>${c.ai.source === 'ollama' ? `IA local ${esc(c.ai.model)} (validada)` : `fallback determinístico (${esc(c.ai.reasons.join(', '))})`} · investigación API: ${esc(c.investigation.state)}${c.investigation.review_result ? ` / ${esc(c.investigation.review_result)}` : ''}</small></td>\n  </tr>`).join('');\n\nconst html = `\n<div style=\"font-family:Arial,Helvetica,sans-serif;color:#1f2937;max-width:900px\">\n  <h2 style=\"margin:0 0 8px\">Aprobación requerida: conciliación ${esc(ctx.header.statement_id)}</h2>\n  <p style=\"margin:0 0 12px\">Datos <b>sintéticos</b>. Proveedor ${esc(ctx.header.provider_id)} · cuenta ${esc(ctx.header.merchant_account)} · ${esc(ctx.header.currency)} · tenant <code>${esc(ctx.tenant)}</code></p>\n  <p style=\"margin:0 0 12px\">Run <code>${esc(run.run_id)}</code> (${esc(run.ruleset_version)}): ${run.results} partidas, <b>${run.exact} conciliadas</b>, <b>${run.exceptions} excepciones</b>. Clasificación IA válida en ${aiOk}/${cases.length}; el resto usa fallback determinístico.</p>\n  <table cellpadding=\"6\" cellspacing=\"0\" border=\"1\" style=\"border-collapse:collapse;border-color:#d1d5db;font-size:13px\">\n    <thead style=\"background:#f3f4f6\"><tr><th>Pago</th><th>Resultado</th><th>Propuesta</th><th>Resumen para el revisor</th></tr></thead>\n    <tbody>${rows}</tbody>\n  </table>\n  <p style=\"margin:16px 0\">La IA no decide: cada fila es una propuesta registrada en la API. Su decisión quedará auditada caso por caso.</p>\n  <p><a href=\"__RESUME_URL__\" style=\"background:#2563eb;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none\">Revisar y aprobar o rechazar</a></p>\n  <p style=\"font-size:12px;color:#6b7280\">Enlace de un solo uso, firmado por n8n. Expira en 24 h. Ejecución n8n #${esc($execution.id)}.</p>\n</div>`;\n\nconst text = cases.map((c, i) => `${i + 1}. ${c.payment_ref} · ${c.match_status} (${c.discrepancy_types.join(', ')}) → ${c.ai.accion_sugerida}, prioridad ${c.ai.prioridad}. ${c.ai.resumen_es}`).join('\\n');\n\nreturn [{\n  json: {\n    tenant: ctx.tenant,\n    statement_id: ctx.header.statement_id,\n    run,\n    cases,\n    ai_valid: aiOk,\n    ai_fallback: cases.length - aiOk,\n    email_html: html,\n    form_text: `Conciliación ${ctx.header.statement_id} (datos sintéticos): ${run.exact} conciliadas, ${run.exceptions} excepciones.\\n\\n${text}\\n\\nLa decisión se aplica a cada caso por separado y queda auditada en la API.`,\n    approval_requested_at: new Date().toISOString(),\n  },\n}];\n"
+      },
+      "id": "78780731-a7e7-4192-a848-97928e919d2c",
+      "name": "Consolidar para revisión humana",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.MAIL_FROM }}",
+        "toEmail": "={{ $env.MAIL_REVIEWER }}",
+        "subject": "=[Aprobación requerida] Conciliación {{ $json.statement_id }}: {{ $json.run.exceptions }} excepciones",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html.replace('__RESUME_URL__', $execution.resumeFormUrl) }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "06fdf59c-9115-4d96-adf5-8cad57c11cb5",
+      "name": "Enviar solicitud de aprobación",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1980,
+        1040
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "mailpitSmtpLocal1",
+          "name": "Mailpit SMTP local"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "content": "## 4. Aprobación humana, decisión auditada y cierre\nEl Wait se reanuda con un formulario firmado (enlace del correo, expira en 24 h). El revisor firma como supervisor; cada caso recibe su decisión en la API con `idempotency_key` estable. Reporte final por correo y como salida de la ejecución.",
+        "height": 470,
+        "width": 2700,
+        "color": 5
+      },
+      "id": "76bbd3e1-7e2b-45ff-a5cf-5428b5a3ce94",
+      "name": "Nota 4",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        1400
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "Aprobación de conciliación (datos sintéticos)",
+        "formDescription": "={{ $('Consolidar para revisión humana').first().json.form_text }}",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Decisión",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Aprobar las propuestas"
+                  },
+                  {
+                    "option": "Rechazar las propuestas"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Motivo",
+              "fieldType": "textarea",
+              "placeholder": "Mínimo 10 caracteres. Queda en la auditoría de la API.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Correo del revisor",
+              "fieldType": "email",
+              "placeholder": "revisor@example.test",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "limitWaitTime": true,
+        "limitType": "afterTimeInterval",
+        "resumeAmount": 24,
+        "resumeUnit": "hours",
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Decisión recibida. n8n la registrará en la API caso por caso y enviará el reporte final por correo."
+            }
+          }
+        }
+      },
+      "id": "cb9ac65c-8847-4a8e-a28a-da72aeb1dbe0",
+      "name": "Esperar decisión humana (formulario)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        1560
+      ],
+      "webhookId": "e1568741-3f9d-4266-a113-12283e6cbf29"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Normalizar decisión humana\".\n// Traduce el formulario a la decisión de la API (APPROVE / REJECT),\n// valida motivo y revisor, y arma los claims del JWT de supervisor con el revisor como\n// sujeto (la API exige que quien decide no sea quien propuso ni quien pidió la investigación).\n\nconst review = $('Consolidar para revisión humana').first().json;\nconst form = $input.first().json;\nconst MAP = {\n  'Aprobar las propuestas': 'APPROVE',\n  'Rechazar las propuestas': 'REJECT',\n  // NEEDS_INFORMATION no se ofrece: la API actual responde 500 al registrarla (ver README, limitaciones).\n};\nconst raw = form['Decisión'];\nconst decision = MAP[raw] || null;\nconst reviewer = String(form['Correo del revisor'] || '').trim().toLowerCase();\nconst motive = String(form['Motivo'] || '').replace(/\\s+/g, ' ').trim();\nconst decidedAt = new Date().toISOString();\nconst waitedMs = Date.parse(decidedAt) - Date.parse(review.approval_requested_at);\n\nif (!decision) {\n  // Sin envío del formulario: el Wait expiró. No se registra ninguna decisión.\n  return [{ json: { decided: false, reason: 'el formulario no se envió antes del límite de espera', waited_ms: waitedMs } }];\n}\nconst problems = [];\nif (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(reviewer)) problems.push('correo del revisor inválido');\nif (motive.length < 10) problems.push('el motivo debe tener al menos 10 caracteres');\nif (problems.length) throw new Error(`Formulario de aprobación inválido: ${problems.join('; ')}`);\n\nconst now = Math.floor(Date.now() / 1000);\nconst subject = `reviewer:${reviewer}`.slice(0, 120);\nreturn [{\n  json: {\n    decided: true,\n    decision,\n    decision_label: raw,\n    reviewer,\n    reason: `${motive} (revisor ${reviewer}, formulario n8n, ejecución ${$execution.id})`.slice(0, 1990),\n    decided_at: decidedAt,\n    waited_ms: waitedMs,\n    claims_supervisor: {\n      iss: $env.RECON_JWT_ISSUER || 'recon-dev-idp',\n      aud: $env.RECON_JWT_AUDIENCE || 'recon-api',\n      sub: subject,\n      tenant_id: review.tenant,\n      roles: ['supervisor'],\n      iat: now, nbf: now, exp: now + 600,\n    },\n  },\n}];\n"
+      },
+      "id": "30d35f51-ae1d-447e-a14f-582a16df4b41",
+      "name": "Normalizar decisión humana",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db88f5c2-0c52-4d9f-a4e5-9023d46de60d",
+              "leftValue": "={{ $json.decided }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "d3e2a7e2-f934-4dd2-abbe-3ebc231af9d7",
+      "name": "¿Decisión recibida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sign",
+        "useJson": true,
+        "claimsJson": "={{ JSON.stringify($('Normalizar decisión humana').first().json.claims_supervisor) }}",
+        "options": {
+          "kid": "={{ $env.RECON_JWT_KID }}"
+        }
+      },
+      "id": "fb9eccee-4526-4361-adc1-52266fea77ed",
+      "name": "Firmar JWT supervisor (revisor)",
+      "type": "n8n-nodes-base.jwt",
+      "typeVersion": 1,
+      "position": [
+        660,
+        1540
+      ],
+      "credentials": {
+        "jwtAuth": {
+          "id": "reconJwtDevKey01",
+          "name": "Recon API - JWT dev (RS256)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Decisiones por caso\" (1 ítem -> 1 ítem por caso).\n// Cada caso recibe su propia decisión en la API, con una clave de idempotencia estable\n// (ejecución + caso): los reintentos HTTP nunca duplican decisiones.\n\nconst review = $('Consolidar para revisión humana').first().json;\nconst d = $('Normalizar decisión humana').first().json;\nreturn review.cases.map((c) => ({\n  json: {\n    case_id: c.case_id,\n    payment_ref: c.payment_ref,\n    recommendation_id: c.recommendation_id,\n    decision: d.decision,\n    reason: d.reason,\n    idempotency_key: `n8n-${$execution.id}-${c.case_id}`,\n  },\n}));\n"
+      },
+      "id": "d29858c2-813b-442c-a466-6443b4268e53",
+      "name": "Decisiones por caso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        1540
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/cases/{{ $json.case_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT supervisor (revisor)').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "56b46549-41b2-468c-abc6-4e782b206eb7",
+      "name": "Leer versión vigente (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        1540
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/cases/{{ $('Decisiones por caso').item.json.case_id }}/decisions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT supervisor (revisor)').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ recommendation_id: $('Decisiones por caso').item.json.recommendation_id, decision: $('Decisiones por caso').item.json.decision, reason: $('Decisiones por caso').item.json.reason, expected_version: $json.version, idempotency_key: $('Decisiones por caso').item.json.idempotency_key }) }}"
+      },
+      "id": "c27c5b7b-db10-421d-a64c-aa906b532163",
+      "name": "Registrar decisión (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        1540
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.RECON_API_BASE_URL }}/v1/cases/{{ $('Decisiones por caso').item.json.case_id }}/audit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Firmar JWT supervisor (revisor)').first().json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "d7223428-4a75-4f41-a76d-ac8478d5e956",
+      "name": "Leer auditoría del caso (API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        1540
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Reporte final\" (Run Once for All Items -> 1 ítem).\n// Se alcanza por tres caminos: sin excepciones, sin decisión (Wait expirado) o después de\n// registrar las decisiones. Calcula métricas y tiempos con datos de la propia ejecución.\n\nconst safe = (fn, fallback = null) => { try { return fn(); } catch (e) { return fallback; } };\nconst ctx = $('Preparar contexto y CSV').first().json;\nconst ingest = $('Verificar recibos de ingesta').first().json;\nconst run = safe(() => $('Separar excepciones').first().json.run);\nconst review = safe(() => $('Consolidar para revisión humana').first().json);\nconst decisionInput = safe(() => $('Normalizar decisión humana').first().json);\nconst perCase = safe(() => $('Decisiones por caso').all(), []);\nconst registered = safe(() => $('Registrar decisión (API)').all(), []);\nconst audits = safe(() => $('Leer auditoría del caso (API)').all(), []);\nconst aiItems = safe(() => $('Validar salida IA (o fallback)').all(), []);\n\nconst now = new Date();\nconst ms = (a, b) => (a && b ? Date.parse(b) - Date.parse(a) : null);\nconst decisions = registered.map((r, i) => {\n  const audit = audits[i]?.json || {};\n  const recorded = (audit.decisions || []).find((d) => d.id === r.json.decision_id);\n  return {\n    case_id: perCase[i]?.json.case_id,\n    payment_ref: perCase[i]?.json.payment_ref,\n    decision_id: r.json.decision_id,\n    decision: r.json.decision,\n    replayed: r.json.replayed,\n    operational_effect: r.json.operational_effect,\n    case_status: audit.case?.status ?? null,\n    approver: recorded?.approver ?? null,\n    audit_entries: (audit.audit || []).length,\n    audit_actions: [...new Set((audit.audit || []).map((a) => a.action))],\n  };\n});\n\nlet outcome = 'COMPLETED_NO_EXCEPTIONS';\nif (review && decisionInput && decisionInput.decided === false) outcome = 'NO_DECISION_TIMEOUT';\nelse if (review) outcome = 'COMPLETED_WITH_HUMAN_DECISION';\n\nconst aiMs = aiItems.length ? ms(aiItems[0].json.ai_started_at, aiItems[0].json.ai_validated_at) : null;\nconst total = ms(ctx.started_at, now.toISOString());\nconst humanWait = decisionInput?.waited_ms ?? null;\nconst report = {\n  outcome,\n  execution_id: $execution.id,\n  statement_id: ctx.header.statement_id,\n  tenant: ctx.tenant,\n  batch_id: ctx.batch_id,\n  data_origin: 'SYNTHETIC',\n  metrics: {\n    transactions_received: ctx.counts.ledger + ctx.counts.statement,\n    ledger_rows: ctx.counts.ledger,\n    statement_rows: ctx.counts.statement,\n    rows_accepted_by_api: ingest.receipts.ledger.accepted + ingest.receipts.statement.accepted,\n    rows_quarantined_by_api: ingest.receipts.ledger.rejected + ingest.receipts.statement.rejected,\n    payments_evaluated: run?.results ?? 0,\n    reconciled_exact: run?.exact ?? 0,\n    exceptions: run?.exceptions ?? 0,\n    match_status_counts: run?.counts ?? {},\n    ai_classified_valid: review?.ai_valid ?? 0,\n    ai_fallback: review?.ai_fallback ?? 0,\n    decisions_registered: decisions.filter((d) => d.decision_id).length,\n    decision: decisionInput?.decision ?? null,\n    reviewer: decisionInput?.reviewer ?? null,\n  },\n  timings_ms: {\n    total,\n    validation_to_ingest_done: ms(ctx.started_at, ingest.ingested_at),\n    run_in_api: run ? ms(run.requested_at, run.completed_at) : null,\n    investigations_wait: aiItems[0]?.json.investigation_wait_ms ?? null,\n    ai_classification: aiMs,\n    human_wait: humanWait,\n    automated: total !== null && humanWait !== null ? total - humanWait : total,\n  },\n  run: run ? { run_id: run.run_id, ruleset_version: run.ruleset_version, snapshot_hash: run.snapshot_hash } : null,\n  cases: (review?.cases || []).map((c) => ({\n    case_id: c.case_id,\n    payment_ref: c.payment_ref,\n    match_status: c.match_status,\n    discrepancy_types: c.discrepancy_types,\n    recommendation_id: c.recommendation_id,\n    investigation_state: c.investigation.state,\n    investigation_review: c.investigation.review_result,\n    ai_source: c.ai.source,\n    ai_reasons: c.ai.reasons,\n    causa_probable: c.ai.causa_probable,\n    accion_sugerida: c.ai.accion_sugerida,\n    prioridad: c.ai.prioridad,\n  })),\n  decisions,\n  warnings: ctx.warnings,\n  finished_at: now.toISOString(),\n};\n\nconst esc = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst m = report.metrics;\nconst t = report.timings_ms;\nconst sec = (v) => (v === null || v === undefined ? 'n/d' : `${(v / 1000).toFixed(1)} s`);\nconst decisionRows = decisions.map((d) => `<tr><td><code>${esc(d.payment_ref)}</code></td><td>${esc(d.decision)}</td><td>${esc(d.case_status)}</td><td><code>${esc(d.decision_id)}</code></td><td>${esc(d.approver)}</td><td>${d.audit_entries}</td></tr>`).join('');\nconst html = `\n<div style=\"font-family:Arial,Helvetica,sans-serif;color:#1f2937;max-width:900px\">\n  <h2 style=\"margin:0 0 8px\">Reporte de conciliación ${esc(report.statement_id)}: ${esc(outcome)}</h2>\n  <p>Datos sintéticos · ejecución n8n #${esc(report.execution_id)} · tenant <code>${esc(report.tenant)}</code></p>\n  <ul>\n    <li>Transacciones recibidas: <b>${m.transactions_received}</b> (${m.ledger_rows} libro mayor + ${m.statement_rows} extracto); aceptadas por la API: ${m.rows_accepted_by_api}</li>\n    <li>Pagos evaluados: <b>${m.payments_evaluated}</b> · conciliados EXACT: <b>${m.reconciled_exact}</b> · excepciones: <b>${m.exceptions}</b></li>\n    <li>Clasificación IA válida: ${m.ai_classified_valid} · fallback determinístico: ${m.ai_fallback}</li>\n    <li>Decisión humana: <b>${esc(m.decision ?? 'ninguna')}</b> por ${esc(m.reviewer ?? 'n/d')} · decisiones registradas en la API: <b>${m.decisions_registered}</b></li>\n    <li>Tiempos: total ${sec(t.total)} · automatizado ${sec(t.automated)} · espera humana ${sec(t.human_wait)} · run en API ${sec(t.run_in_api)} · IA ${sec(t.ai_classification)}</li>\n  </ul>\n  ${decisionRows ? `<table cellpadding=\"6\" cellspacing=\"0\" border=\"1\" style=\"border-collapse:collapse;border-color:#d1d5db;font-size:13px\"><thead style=\"background:#f3f4f6\"><tr><th>Pago</th><th>Decisión</th><th>Estado del caso</th><th>decision_id</th><th>Aprobador</th><th>Entradas de auditoría</th></tr></thead><tbody>${decisionRows}</tbody></table>` : ''}\n  <p style=\"font-size:12px;color:#6b7280\">Aprobar sólo registra la decisión: la API no mueve dinero (operational_effect: none).</p>\n</div>`;\n\nreturn [{ json: { report, email_html: html, email_subject: `[Reporte] Conciliación ${report.statement_id}: ${m.reconciled_exact}/${m.payments_evaluated} conciliadas, ${m.exceptions} excepciones, ${m.decisions_registered} decisiones` } }];\n"
+      },
+      "id": "a8c78ba5-738b-4954-a109-165b3f5a526f",
+      "name": "Reporte final",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        1640
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.MAIL_FROM }}",
+        "toEmail": "={{ $env.MAIL_REVIEWER }}, {{ $env.MAIL_OPS }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5b232589-4784-4783-a64f-adddb8097573",
+      "name": "Enviar reporte final",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1980,
+        1640
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "mailpitSmtpLocal1",
+          "name": "Mailpit SMTP local"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    },
+    {
+      "parameters": {
+        "jsCode": "// Salida final de la ejecución (consultable por la API pública de n8n).\nreturn [{ json: $('Reporte final').first().json.report }];"
+      },
+      "id": "942925ea-b971-4ceb-aeda-ec37c9a83444",
+      "name": "Resultado de la ejecución",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        1640
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: extracto bancario": {
+      "main": [
+        [
+          {
+            "node": "Validar y normalizar extracto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y normalizar extracto": {
+      "main": [
+        [
+          {
+            "node": "¿Entrada válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule (opcional)": {
+      "main": [
+        [
+          {
+            "node": "Extracto programado (demo sintética)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracto programado (demo sintética)": {
+      "main": [
+        [
+          {
+            "node": "Validar y normalizar extracto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Entrada válida?": {
+      "main": [
+        [
+          {
+            "node": "Responder 202: aceptado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 400: entrada inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder 202: aceptado": {
+      "main": [
+        [
+          {
+            "node": "Preparar contexto y CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar contexto y CSV": {
+      "main": [
+        [
+          {
+            "node": "Firmar JWT integración",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firmar JWT integración": {
+      "main": [
+        [
+          {
+            "node": "Firmar JWT analista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firmar JWT analista": {
+      "main": [
+        [
+          {
+            "node": "Ingerir libro mayor (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ingerir libro mayor (API)": {
+      "main": [
+        [
+          {
+            "node": "Ingerir extracto bancario (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ingerir extracto bancario (API)": {
+      "main": [
+        [
+          {
+            "node": "Verificar recibos de ingesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar recibos de ingesta": {
+      "main": [
+        [
+          {
+            "node": "Crear lote (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear lote (API)": {
+      "main": [
+        [
+          {
+            "node": "Cerrar fuente: libro mayor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cerrar fuente: libro mayor": {
+      "main": [
+        [
+          {
+            "node": "Cerrar fuente: extracto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cerrar fuente: extracto": {
+      "main": [
+        [
+          {
+            "node": "Lanzar run de conciliación (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lanzar run de conciliación (API)": {
+      "main": [
+        [
+          {
+            "node": "Esperar 1 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar 1 s": {
+      "main": [
+        [
+          {
+            "node": "Consultar estado del run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar estado del run": {
+      "main": [
+        [
+          {
+            "node": "¿Run completado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Run completado?": {
+      "main": [
+        [
+          {
+            "node": "Leer resultados del run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Quedan intentos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Quedan intentos?": {
+      "main": [
+        [
+          {
+            "node": "Esperar 1 s",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error: run sin completar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer resultados del run": {
+      "main": [
+        [
+          {
+            "node": "Separar excepciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar excepciones": {
+      "main": [
+        [
+          {
+            "node": "¿Hay excepciones?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay excepciones?": {
+      "main": [
+        [
+          {
+            "node": "Abrir caso (API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reporte final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abrir caso (API)": {
+      "main": [
+        [
+          {
+            "node": "Solicitar investigación (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solicitar investigación (API)": {
+      "main": [
+        [
+          {
+            "node": "Esperar investigaciones (polling acotado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar investigaciones (polling acotado)": {
+      "main": [
+        [
+          {
+            "node": "Preparar prompt IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar prompt IA": {
+      "main": [
+        [
+          {
+            "node": "Clasificar con Ollama (qwen2.5:7b)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar con Ollama (qwen2.5:7b)": {
+      "main": [
+        [
+          {
+            "node": "Validar salida IA (o fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar salida IA (o fallback)": {
+      "main": [
+        [
+          {
+            "node": "Leer caso (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer caso (API)": {
+      "main": [
+        [
+          {
+            "node": "Proponer recomendación (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proponer recomendación (API)": {
+      "main": [
+        [
+          {
+            "node": "Consolidar para revisión humana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidar para revisión humana": {
+      "main": [
+        [
+          {
+            "node": "Enviar solicitud de aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar solicitud de aprobación": {
+      "main": [
+        [
+          {
+            "node": "Esperar decisión humana (formulario)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar decisión humana (formulario)": {
+      "main": [
+        [
+          {
+            "node": "Normalizar decisión humana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar decisión humana": {
+      "main": [
+        [
+          {
+            "node": "¿Decisión recibida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Decisión recibida?": {
+      "main": [
+        [
+          {
+            "node": "Firmar JWT supervisor (revisor)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reporte final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firmar JWT supervisor (revisor)": {
+      "main": [
+        [
+          {
+            "node": "Decisiones por caso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decisiones por caso": {
+      "main": [
+        [
+          {
+            "node": "Leer versión vigente (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer versión vigente (API)": {
+      "main": [
+        [
+          {
+            "node": "Registrar decisión (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar decisión (API)": {
+      "main": [
+        [
+          {
+            "node": "Leer auditoría del caso (API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer auditoría del caso (API)": {
+      "main": [
+        [
+          {
+            "node": "Reporte final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reporte final": {
+      "main": [
+        [
+          {
+            "node": "Enviar reporte final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar reporte final": {
+      "main": [
+        [
+          {
+            "node": "Resultado de la ejecución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "reconErrNotif001",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "timezone": "America/La_Paz",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

@@ -1,0 +1,666 @@
+{
+  "execution_id": "18",
+  "statement_id": "stmt-e2e-inv-20261003063059",
+  "tenant": "n8n-x18",
+  "test_fault": "ollama_invalid_json",
+  "webhook_response": {
+    "status": "accepted",
+    "execution_id": "18",
+    "statement_id": "stmt-e2e-inv-20261003063059",
+    "transactions": 18,
+    "warnings": [],
+    "next": "Conciliación en curso; el revisor recibirá un correo de aprobación y el reporte final llegará por correo."
+  },
+  "seconds_until_waiting": 17.1,
+  "form_choice": "Aprobar las propuestas",
+  "form_response_excerpt": "Aprobación de conciliación (datos sintéticos) Conciliación stmt-e2e-inv-20261003063059 (datos sintéticos): 6 conciliadas, 4 excepciones. 1. pay-n8n-0007 · UNMATCHED (AMOUNT_MISMATCH) → REQUEST_PROVIDE",
+  "report": {
+    "outcome": "COMPLETED_WITH_HUMAN_DECISION",
+    "execution_id": "18",
+    "statement_id": "stmt-e2e-inv-20261003063059",
+    "tenant": "n8n-x18",
+    "batch_id": "b-stmt-e2e-inv-20261003063059",
+    "data_origin": "SYNTHETIC",
+    "metrics": {
+      "transactions_received": 18,
+      "ledger_rows": 9,
+      "statement_rows": 9,
+      "rows_accepted_by_api": 18,
+      "rows_quarantined_by_api": 0,
+      "payments_evaluated": 10,
+      "reconciled_exact": 6,
+      "exceptions": 4,
+      "match_status_counts": {
+        "EXACT": 6,
+        "UNMATCHED": 4
+      },
+      "ai_classified_valid": 0,
+      "ai_fallback": 4,
+      "decisions_registered": 4,
+      "decision": "APPROVE",
+      "reviewer": "revisora.demo@example.test"
+    },
+    "timings_ms": {
+      "total": 18548,
+      "validation_to_ingest_done": 155,
+      "run_in_api": 321,
+      "investigations_wait": 6112,
+      "ai_classification": 8764,
+      "human_wait": 1968,
+      "automated": 16580
+    },
+    "run": {
+      "run_id": "478ab315-9171-47a4-8888-625b5c46edf2",
+      "ruleset_version": "rules/v1",
+      "snapshot_hash": "e96164059731177e8f5303c4adde7042a8db08910b5482b80d70a01f3786b68e"
+    },
+    "cases": [
+      {
+        "case_id": "b9c13a44-a36a-4279-aaf9-4a322113b872",
+        "payment_ref": "pay-n8n-0007",
+        "match_status": "UNMATCHED",
+        "discrepancy_types": [
+          "AMOUNT_MISMATCH"
+        ],
+        "recommendation_id": "2453ac59-3eb0-4da4-809b-be5204009ab9",
+        "investigation_state": "DRAFTED",
+        "investigation_review": "SUPPORTED",
+        "ai_source": "fallback",
+        "ai_reasons": [
+          "json_invalido"
+        ],
+        "causa_probable": "indeterminado",
+        "accion_sugerida": "REQUEST_PROVIDER_INFO",
+        "prioridad": "media"
+      },
+      {
+        "case_id": "aad01590-a5b4-4ed0-a7dc-dee17925d6c4",
+        "payment_ref": "pay-n8n-0008",
+        "match_status": "UNMATCHED",
+        "discrepancy_types": [
+          "STATUS_MISMATCH"
+        ],
+        "recommendation_id": "fee006c2-465b-43db-b51d-aa9e060b4ae3",
+        "investigation_state": "DRAFTED",
+        "investigation_review": "SUPPORTED",
+        "ai_source": "fallback",
+        "ai_reasons": [
+          "json_invalido"
+        ],
+        "causa_probable": "indeterminado",
+        "accion_sugerida": "REQUEST_PROVIDER_INFO",
+        "prioridad": "media"
+      },
+      {
+        "case_id": "fe8c6aa7-d351-4a34-b205-da68d4176e54",
+        "payment_ref": "pay-n8n-0009",
+        "match_status": "UNMATCHED",
+        "discrepancy_types": [
+          "MISSING_EXTERNAL"
+        ],
+        "recommendation_id": "accc4b7d-5846-4c67-8e4d-0f959e73c3f5",
+        "investigation_state": "NOT_NEEDED",
+        "investigation_review": null,
+        "ai_source": "fallback",
+        "ai_reasons": [
+          "json_invalido"
+        ],
+        "causa_probable": "indeterminado",
+        "accion_sugerida": "REQUEST_PROVIDER_INFO",
+        "prioridad": "alta"
+      },
+      {
+        "case_id": "b8e81b19-feca-4075-b953-1415a0ae4e7a",
+        "payment_ref": "pay-n8n-0010",
+        "match_status": "UNMATCHED",
+        "discrepancy_types": [
+          "MISSING_INTERNAL"
+        ],
+        "recommendation_id": "4215b6f4-f811-4a9a-b485-86038c7f9320",
+        "investigation_state": "NOT_NEEDED",
+        "investigation_review": null,
+        "ai_source": "fallback",
+        "ai_reasons": [
+          "json_invalido"
+        ],
+        "causa_probable": "indeterminado",
+        "accion_sugerida": "REQUEST_ADJUSTMENT_REVIEW",
+        "prioridad": "alta"
+      }
+    ],
+    "decisions": [
+      {
+        "case_id": "b9c13a44-a36a-4279-aaf9-4a322113b872",
+        "payment_ref": "pay-n8n-0007",
+        "decision_id": "431a84e3-ceb8-4c2f-aee2-ca028ed658bd",
+        "decision": "APPROVE",
+        "replayed": false,
+        "operational_effect": "none: the decision is recorded; no money movement is executed",
+        "case_status": "APPROVED",
+        "approver": "reviewer:revisora.demo@example.test",
+        "audit_entries": 5,
+        "audit_actions": [
+          "case.open",
+          "investigation.request",
+          "investigation.finish",
+          "recommendation.create",
+          "decision.record"
+        ]
+      },
+      {
+        "case_id": "aad01590-a5b4-4ed0-a7dc-dee17925d6c4",
+        "payment_ref": "pay-n8n-0008",
+        "decision_id": "4a17ccde-16a8-4d80-9258-6cf3f0a2a26d",
+        "decision": "APPROVE",
+        "replayed": false,
+        "operational_effect": "none: the decision is recorded; no money movement is executed",
+        "case_status": "APPROVED",
+        "approver": "reviewer:revisora.demo@example.test",
+        "audit_entries": 5,
+        "audit_actions": [
+          "case.open",
+          "investigation.request",
+          "investigation.finish",
+          "recommendation.create",
+          "decision.record"
+        ]
+      },
+      {
+        "case_id": "fe8c6aa7-d351-4a34-b205-da68d4176e54",
+        "payment_ref": "pay-n8n-0009",
+        "decision_id": "8531b64d-e6d1-4504-8c4b-e705685e5a6c",
+        "decision": "APPROVE",
+        "replayed": false,
+        "operational_effect": "none: the decision is recorded; no money movement is executed",
+        "case_status": "APPROVED",
+        "approver": "reviewer:revisora.demo@example.test",
+        "audit_entries": 3,
+        "audit_actions": [
+          "case.open",
+          "recommendation.create",
+          "decision.record"
+        ]
+      },
+      {
+        "case_id": "b8e81b19-feca-4075-b953-1415a0ae4e7a",
+        "payment_ref": "pay-n8n-0010",
+        "decision_id": "8c7a9054-00b3-457e-862e-0be20850088d",
+        "decision": "APPROVE",
+        "replayed": false,
+        "operational_effect": "none: the decision is recorded; no money movement is executed",
+        "case_status": "APPROVED",
+        "approver": "reviewer:revisora.demo@example.test",
+        "audit_entries": 3,
+        "audit_actions": [
+          "case.open",
+          "recommendation.create",
+          "decision.record"
+        ]
+      }
+    ],
+    "warnings": [],
+    "finished_at": "2026-10-03T06:32:04.455Z"
+  },
+  "api_verification": [
+    {
+      "case_id": "b9c13a44-a36a-4279-aaf9-4a322113b872",
+      "payment_ref": "pay-n8n-0007",
+      "http": 200,
+      "case_status": "APPROVED",
+      "decision": "APPROVE",
+      "approver": "reviewer:revisora.demo@example.test",
+      "reason": "E2E D_respuesta_invalida_modelo: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 18)",
+      "audit_actions": [
+        "case.open",
+        "investigation.request",
+        "investigation.finish",
+        "recommendation.create",
+        "decision.record",
+        "case.audit_read"
+      ]
+    },
+    {
+      "case_id": "aad01590-a5b4-4ed0-a7dc-dee17925d6c4",
+      "payment_ref": "pay-n8n-0008",
+      "http": 200,
+      "case_status": "APPROVED",
+      "decision": "APPROVE",
+      "approver": "reviewer:revisora.demo@example.test",
+      "reason": "E2E D_respuesta_invalida_modelo: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 18)",
+      "audit_actions": [
+        "case.open",
+        "investigation.request",
+        "investigation.finish",
+        "recommendation.create",
+        "decision.record",
+        "case.audit_read"
+      ]
+    },
+    {
+      "case_id": "fe8c6aa7-d351-4a34-b205-da68d4176e54",
+      "payment_ref": "pay-n8n-0009",
+      "http": 200,
+      "case_status": "APPROVED",
+      "decision": "APPROVE",
+      "approver": "reviewer:revisora.demo@example.test",
+      "reason": "E2E D_respuesta_invalida_modelo: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 18)",
+      "audit_actions": [
+        "case.open",
+        "recommendation.create",
+        "decision.record",
+        "case.audit_read"
+      ]
+    },
+    {
+      "case_id": "b8e81b19-feca-4075-b953-1415a0ae4e7a",
+      "payment_ref": "pay-n8n-0010",
+      "http": 200,
+      "case_status": "APPROVED",
+      "decision": "APPROVE",
+      "approver": "reviewer:revisora.demo@example.test",
+      "reason": "E2E D_respuesta_invalida_modelo: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 18)",
+      "audit_actions": [
+        "case.open",
+        "recommendation.create",
+        "decision.record",
+        "case.audit_read"
+      ]
+    }
+  ],
+  "idempotency_replay": null,
+  "mails": [
+    {
+      "id": "6ornl3afGg6MScd4ORQu7y",
+      "subject": "[Aprobación requerida] Conciliación stmt-e2e-inv-20261003063059: 4 excepciones",
+      "from": "n8n-conciliacion@example.test",
+      "to": [
+        "revisor@example.test"
+      ],
+      "date": "2026-10-03T06:32:02Z",
+      "size": 4500
+    },
+    {
+      "id": "0hdUSRvCLRcrCXhvHFtjYo",
+      "subject": "[Reporte] Conciliación stmt-e2e-inv-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+      "from": "n8n-conciliacion@example.test",
+      "to": [
+        "revisor@example.test",
+        "operaciones@example.test"
+      ],
+      "date": "2026-10-03T06:32:04Z",
+      "size": 2913
+    }
+  ],
+  "seconds_form_to_success": 3.3,
+  "nodes": [
+    {
+      "node": "Webhook: extracto bancario",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.892Z",
+      "execution_ms": 0,
+      "error": null
+    },
+    {
+      "node": "Validar y normalizar extracto",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.898Z",
+      "execution_ms": 9,
+      "error": null
+    },
+    {
+      "node": "¿Entrada válida?",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.914Z",
+      "execution_ms": 3,
+      "error": null
+    },
+    {
+      "node": "Responder 202: aceptado",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.924Z",
+      "execution_ms": 2,
+      "error": null
+    },
+    {
+      "node": "Preparar contexto y CSV",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.937Z",
+      "execution_ms": 9,
+      "error": null
+    },
+    {
+      "node": "Firmar JWT integración",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.952Z",
+      "execution_ms": 5,
+      "error": null
+    },
+    {
+      "node": "Firmar JWT analista",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.962Z",
+      "execution_ms": 5,
+      "error": null
+    },
+    {
+      "node": "Ingerir libro mayor (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:45.972Z",
+      "execution_ms": 37,
+      "error": null
+    },
+    {
+      "node": "Ingerir extracto bancario (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.015Z",
+      "execution_ms": 33,
+      "error": null
+    },
+    {
+      "node": "Verificar recibos de ingesta",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.057Z",
+      "execution_ms": 6,
+      "error": null
+    },
+    {
+      "node": "Crear lote (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.069Z",
+      "execution_ms": 13,
+      "error": null
+    },
+    {
+      "node": "Cerrar fuente: libro mayor",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.088Z",
+      "execution_ms": 13,
+      "error": null
+    },
+    {
+      "node": "Cerrar fuente: extracto",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.107Z",
+      "execution_ms": 14,
+      "error": null
+    },
+    {
+      "node": "Lanzar run de conciliación (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.127Z",
+      "execution_ms": 15,
+      "error": null
+    },
+    {
+      "node": "Esperar 1 s",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:46.148Z",
+      "execution_ms": 1001,
+      "error": null
+    },
+    {
+      "node": "Consultar estado del run",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:47.156Z",
+      "execution_ms": 12,
+      "error": null
+    },
+    {
+      "node": "¿Run completado?",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:47.174Z",
+      "execution_ms": 2,
+      "error": null
+    },
+    {
+      "node": "Leer resultados del run",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:31:47.182Z",
+      "execution_ms": 11,
+      "error": null
+    },
+    {
+      "node": "Separar excepciones",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:47.199Z",
+      "execution_ms": 6,
+      "error": null
+    },
+    {
+      "node": "¿Hay excepciones?",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:47.211Z",
+      "execution_ms": 3,
+      "error": null
+    },
+    {
+      "node": "Abrir caso (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:47.223Z",
+      "execution_ms": 26,
+      "error": null
+    },
+    {
+      "node": "Solicitar investigación (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:47.257Z",
+      "execution_ms": 32,
+      "error": null
+    },
+    {
+      "node": "Esperar investigaciones (polling acotado)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:47.297Z",
+      "execution_ms": 6119,
+      "error": null
+    },
+    {
+      "node": "Preparar prompt IA",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:53.428Z",
+      "execution_ms": 8,
+      "error": null
+    },
+    {
+      "node": "Clasificar con Ollama (qwen2.5:7b)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:31:53.450Z",
+      "execution_ms": 8730,
+      "error": null
+    },
+    {
+      "node": "Validar salida IA (o fallback)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:02.190Z",
+      "execution_ms": 9,
+      "error": null
+    },
+    {
+      "node": "Leer caso (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:02.208Z",
+      "execution_ms": 28,
+      "error": null
+    },
+    {
+      "node": "Proponer recomendación (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:02.244Z",
+      "execution_ms": 31,
+      "error": null
+    },
+    {
+      "node": "Consolidar para revisión humana",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:02.283Z",
+      "execution_ms": 6,
+      "error": null
+    },
+    {
+      "node": "Enviar solicitud de aprobación",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:02.297Z",
+      "execution_ms": 51,
+      "error": null
+    },
+    {
+      "node": "Esperar decisión humana (formulario)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.242Z",
+      "execution_ms": 1,
+      "error": null
+    },
+    {
+      "node": "Normalizar decisión humana",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.250Z",
+      "execution_ms": 7,
+      "error": null
+    },
+    {
+      "node": "¿Decisión recibida?",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.263Z",
+      "execution_ms": 3,
+      "error": null
+    },
+    {
+      "node": "Firmar JWT supervisor (revisor)",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.276Z",
+      "execution_ms": 5,
+      "error": null
+    },
+    {
+      "node": "Decisiones por caso",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:04.290Z",
+      "execution_ms": 7,
+      "error": null
+    },
+    {
+      "node": "Leer versión vigente (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:04.306Z",
+      "execution_ms": 27,
+      "error": null
+    },
+    {
+      "node": "Registrar decisión (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:04.342Z",
+      "execution_ms": 39,
+      "error": null
+    },
+    {
+      "node": "Leer auditoría del caso (API)",
+      "runs": 1,
+      "status": "success",
+      "items": 4,
+      "started_at": "2026-10-03T06:32:04.391Z",
+      "execution_ms": 47,
+      "error": null
+    },
+    {
+      "node": "Reporte final",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.447Z",
+      "execution_ms": 9,
+      "error": null
+    },
+    {
+      "node": "Enviar reporte final",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.464Z",
+      "execution_ms": 52,
+      "error": null
+    },
+    {
+      "node": "Resultado de la ejecución",
+      "runs": 1,
+      "status": "success",
+      "items": 1,
+      "started_at": "2026-10-03T06:32:04.524Z",
+      "execution_ms": 6,
+      "error": null
+    }
+  ]
+}

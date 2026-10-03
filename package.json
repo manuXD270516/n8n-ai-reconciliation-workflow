@@ -1,0 +1,21 @@
+{
+  "name": "n8n-ai-reconciliation-workflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workflow n8n de conciliación de pagos asistida por IA local con aprobación humana (datos sintéticos).",
+  "license": "MIT",
+  "author": "Manuel Saavedra",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build-workflow.mjs",
+    "e2e": "node scripts/e2e.mjs",
+    "capture": "node scripts/capture.mjs",
+    "pdf": "node scripts/build-pdf.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

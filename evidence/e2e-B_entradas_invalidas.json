@@ -1,0 +1,222 @@
+{
+  "cases": [
+    {
+      "case": "campos y filas inválidas",
+      "status": 400,
+      "response": {
+        "status": "rejected",
+        "message": "El extracto no pasó la validación; no se llamó a la API.",
+        "error_count": 2,
+        "errors": [
+          {
+            "field": "statement_id",
+            "message": "obligatorio, 3-49 caracteres [A-Za-z0-9._-]"
+          },
+          {
+            "field": "currency",
+            "message": "moneda no soportada; válidas: USD, BOB"
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "case": "CSV con encabezado incompleto",
+      "status": 400,
+      "response": {
+        "status": "rejected",
+        "message": "El extracto no pasó la validación; no se llamó a la API.",
+        "error_count": 2,
+        "errors": [
+          {
+            "field": "statement_csv",
+            "message": "faltan columnas: source_record_id, operation, currency, status, occurred_at, received_at"
+          },
+          {
+            "field": "statement",
+            "message": "no hay filas"
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "case": "ventana invertida y cutoff anterior",
+      "status": 400,
+      "response": {
+        "status": "rejected",
+        "message": "El extracto no pasó la validación; no se llamó a la API.",
+        "error_count": 2,
+        "errors": [
+          {
+            "field": "window_end",
+            "message": "debe ser posterior a window_start"
+          },
+          {
+            "field": "cutoff_at",
+            "message": "no puede ser anterior a window_end"
+          }
+        ],
+        "warnings": [
+          {
+            "field": "statement.occurred_at",
+            "row": 1,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 2,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 3,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 4,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 5,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 6,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 7,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 8,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "statement.occurred_at",
+            "row": 9,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 1,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 2,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 3,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 4,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 5,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 6,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 7,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 8,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          },
+          {
+            "field": "ledger.occurred_at",
+            "row": 9,
+            "message": "fuera de la ventana del lote; la API no la conciliará en este lote"
+          }
+        ]
+      }
+    },
+    {
+      "case": "cuerpo no JSON (text/csv)",
+      "status": 400,
+      "response": {
+        "status": "rejected",
+        "message": "El extracto no pasó la validación; no se llamó a la API.",
+        "error_count": 1,
+        "errors": [
+          {
+            "field": "content-type",
+            "message": "se esperaba application/json (llegó \"text/csv\"); el CSV va dentro del campo statement_csv"
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "case": "JSON ilegible",
+      "status": 422,
+      "response": {
+        "code": 422,
+        "message": "Failed to parse request body",
+        "hint": "Expected double-quoted property name in JSON at position 22 (line 1 column 23)"
+      }
+    }
+  ],
+  "executions": [
+    {
+      "execution_id": "16",
+      "status": "success",
+      "nodes": [
+        "Webhook: extracto bancario",
+        "Validar y normalizar extracto",
+        "¿Entrada válida?",
+        "Responder 400: entrada inválida"
+      ]
+    },
+    {
+      "execution_id": "15",
+      "status": "success",
+      "nodes": [
+        "Webhook: extracto bancario",
+        "Validar y normalizar extracto",
+        "¿Entrada válida?",
+        "Responder 400: entrada inválida"
+      ]
+    },
+    {
+      "execution_id": "14",
+      "status": "success",
+      "nodes": [
+        "Webhook: extracto bancario",
+        "Validar y normalizar extracto",
+        "¿Entrada válida?",
+        "Responder 400: entrada inválida"
+      ]
+    },
+    {
+      "execution_id": "13",
+      "status": "success",
+      "nodes": [
+        "Webhook: extracto bancario",
+        "Validar y normalizar extracto",
+        "¿Entrada válida?",
+        "Responder 400: entrada inválida"
+      ]
+    }
+  ]
+}

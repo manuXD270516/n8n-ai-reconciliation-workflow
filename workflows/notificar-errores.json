@@ -1,0 +1,94 @@
+{
+  "id": "reconErrNotif001",
+  "name": "Conciliación: notificar errores",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "14b2d989-b67f-414d-ad34-5cd248eb6ef0",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo Code: \"Sanitizar error\" (workflow de errores).\n// Arma la notificación a operaciones sin secretos: borra JWT, encabezados Authorization y\n// claves PEM que pudieran aparecer en mensajes de error, y recorta el texto.\n\nconst e = $input.first().json;\nconst scrub = (s) => String(s ?? '')\n  .replace(/eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+/g, '[JWT redactado]')\n  .replace(/(authorization|bearer)\\s*[:=]?\\s*[^\\s,;\"]+/gi, '$1 [redactado]')\n  .replace(/-----BEGIN [^-]+-----[\\s\\S]*?-----END [^-]+-----/g, '[PEM redactado]')\n  .slice(0, 1500);\nconst esc = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst info = {\n  workflow: e.workflow?.name ?? 'desconocido',\n  workflow_id: e.workflow?.id ?? null,\n  execution_id: e.execution?.id ?? null,\n  execution_url: e.execution?.url ?? null,\n  mode: e.execution?.mode ?? null,\n  failed_node: e.execution?.lastNodeExecuted ?? e.execution?.error?.node?.name ?? null,\n  error_message: scrub(e.execution?.error?.message ?? e.trigger?.error?.message ?? 'sin mensaje'),\n  error_description: scrub(e.execution?.error?.description ?? ''),\n  at: new Date().toISOString(),\n};\nconst html = `\n<div style=\"font-family:Arial,Helvetica,sans-serif;color:#1f2937\">\n  <h2 style=\"color:#b91c1c;margin:0 0 8px\">Falla en ${esc(info.workflow)}</h2>\n  <ul>\n    <li>Ejecución: <b>#${esc(info.execution_id)}</b> (${esc(info.mode)})</li>\n    <li>Nodo: <b>${esc(info.failed_node)}</b></li>\n    <li>Error: ${esc(info.error_message)}</li>\n    ${info.error_description ? `<li>Detalle: ${esc(info.error_description)}</li>` : ''}\n  </ul>\n  ${info.execution_url ? `<p><a href=\"${esc(info.execution_url)}\">Abrir la ejecución en n8n</a></p>` : ''}\n  <p style=\"font-size:12px;color:#6b7280\">Mensaje sanitizado: sin tokens ni encabezados de autenticación.</p>\n</div>`;\nreturn [{ json: { ...info, email_html: html } }];\n"
+      },
+      "id": "e4df6ce2-3605-41b6-a767-c374df943922",
+      "name": "Sanitizar error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.MAIL_FROM }}",
+        "toEmail": "={{ $env.MAIL_OPS }}",
+        "subject": "=[ERROR] {{ $json.workflow }}: ejecución #{{ $json.execution_id }} falló en {{ $json.failed_node }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "26de13cf-8c16-4b08-a62f-b9d6123da692",
+      "name": "Notificar a operaciones",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        0
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "mailpitSmtpLocal1",
+          "name": "Mailpit SMTP local"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sanitizar error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitizar error": {
+      "main": [
+        [
+          {
+            "node": "Notificar a operaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "all",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/La_Paz"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

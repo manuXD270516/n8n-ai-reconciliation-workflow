@@ -1,0 +1,780 @@
+{
+  "started_at": "2026-10-03T06:30:59.672Z",
+  "scenarios": {
+    "A_camino_feliz": {
+      "execution_id": "12",
+      "status": "success",
+      "outcome": "COMPLETED_WITH_HUMAN_DECISION",
+      "metrics": {
+        "transactions_received": 18,
+        "ledger_rows": 9,
+        "statement_rows": 9,
+        "rows_accepted_by_api": 18,
+        "rows_quarantined_by_api": 0,
+        "payments_evaluated": 10,
+        "reconciled_exact": 6,
+        "exceptions": 4,
+        "match_status_counts": {
+          "EXACT": 6,
+          "UNMATCHED": 4
+        },
+        "ai_classified_valid": 4,
+        "ai_fallback": 0,
+        "decisions_registered": 4,
+        "decision": "APPROVE",
+        "reviewer": "revisora.demo@example.test"
+      },
+      "timings_ms": {
+        "total": 17687,
+        "validation_to_ingest_done": 254,
+        "run_in_api": 209,
+        "investigations_wait": 4601,
+        "ai_classification": 8895,
+        "human_wait": 2321,
+        "automated": 15366
+      }
+    },
+    "B_entradas_invalidas": {
+      "cases": [
+        {
+          "case": "campos y filas inválidas",
+          "status": 400
+        },
+        {
+          "case": "CSV con encabezado incompleto",
+          "status": 400
+        },
+        {
+          "case": "ventana invertida y cutoff anterior",
+          "status": 400
+        },
+        {
+          "case": "cuerpo no JSON (text/csv)",
+          "status": 400
+        },
+        {
+          "case": "JSON ilegible",
+          "status": 422
+        }
+      ],
+      "executions": [
+        "16",
+        "15",
+        "14",
+        "13"
+      ]
+    },
+    "C_ollama_caido": {
+      "execution_id": "17",
+      "status": "success",
+      "outcome": "COMPLETED_WITH_HUMAN_DECISION",
+      "metrics": {
+        "transactions_received": 18,
+        "ledger_rows": 9,
+        "statement_rows": 9,
+        "rows_accepted_by_api": 18,
+        "rows_quarantined_by_api": 0,
+        "payments_evaluated": 10,
+        "reconciled_exact": 6,
+        "exceptions": 4,
+        "match_status_counts": {
+          "EXACT": 6,
+          "UNMATCHED": 4
+        },
+        "ai_classified_valid": 0,
+        "ai_fallback": 4,
+        "decisions_registered": 4,
+        "decision": "REJECT",
+        "reviewer": "revisora.demo@example.test"
+      },
+      "timings_ms": {
+        "total": 10853,
+        "validation_to_ingest_done": 164,
+        "run_in_api": 243,
+        "investigations_wait": 4596,
+        "ai_classification": 2054,
+        "human_wait": 2532,
+        "automated": 8321
+      }
+    },
+    "D_respuesta_invalida_modelo": {
+      "execution_id": "18",
+      "status": "success",
+      "outcome": "COMPLETED_WITH_HUMAN_DECISION",
+      "metrics": {
+        "transactions_received": 18,
+        "ledger_rows": 9,
+        "statement_rows": 9,
+        "rows_accepted_by_api": 18,
+        "rows_quarantined_by_api": 0,
+        "payments_evaluated": 10,
+        "reconciled_exact": 6,
+        "exceptions": 4,
+        "match_status_counts": {
+          "EXACT": 6,
+          "UNMATCHED": 4
+        },
+        "ai_classified_valid": 0,
+        "ai_fallback": 4,
+        "decisions_registered": 4,
+        "decision": "APPROVE",
+        "reviewer": "revisora.demo@example.test"
+      },
+      "timings_ms": {
+        "total": 18548,
+        "validation_to_ingest_done": 155,
+        "run_in_api": 321,
+        "investigations_wait": 6112,
+        "ai_classification": 8764,
+        "human_wait": 1968,
+        "automated": 16580
+      }
+    },
+    "E_error_api_error_trigger": {
+      "execution_id": "19",
+      "status": "error",
+      "failed_node": "Crear lote (API)",
+      "error_workflow_execution": "20"
+    },
+    "F_inyeccion_deshabilitada": {
+      "status": 400,
+      "errors": [
+        {
+          "field": "test_fault",
+          "message": "inyección de fallas deshabilitada en este entorno"
+        }
+      ]
+    }
+  },
+  "preflight": {
+    "api_ready": "ready",
+    "ollama_models": [
+      "qwen3-coder:30b",
+      "qwen2.5:7b",
+      "mxbai-embed-large:latest",
+      "qwen2.5:3b"
+    ],
+    "n8n_version": "2.41.6",
+    "model": "qwen2.5:7b"
+  },
+  "finished_at": "2026-10-03T06:32:18.875Z",
+  "checks": [
+    {
+      "scenario": "preflight",
+      "name": "API de conciliación lista",
+      "ok": true,
+      "detail": "ready"
+    },
+    {
+      "scenario": "preflight",
+      "name": "Ollama tiene qwen2.5:7b",
+      "ok": true,
+      "detail": [
+        "qwen3-coder:30b",
+        "qwen2.5:7b",
+        "mxbai-embed-large:latest",
+        "qwen2.5:3b"
+      ]
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "webhook responde 202 con execution_id",
+      "ok": true,
+      "detail": {
+        "status": 202,
+        "execution_id": "12"
+      }
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "la ejecución queda esperando la decisión humana (Wait)",
+      "ok": true,
+      "detail": "waiting"
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "correo de aprobación en Mailpit con enlace firmado",
+      "ok": true,
+      "detail": {
+        "id": "6FE2ITeKB33YRiM9PgbHBV",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-ok-20261003063059: 4 excepciones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test"
+        ],
+        "date": "2026-10-03T06:31:25Z",
+        "size": 4301
+      }
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "al menos una clasificación de Ollama validada (el resto, fallback con motivo)",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "error_de_datos_o_mapeo",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "error_de_datos_o_mapeo",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "rechazo_o_reverso_del_proveedor",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "error_de_datos_o_mapeo",
+          "accion": "REQUEST_ADJUSTMENT_REVIEW"
+        }
+      ]
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "la ejecución termina en success",
+      "ok": true,
+      "detail": "success"
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "correo de reporte final en Mailpit (revisor + operaciones)",
+      "ok": true,
+      "detail": {
+        "id": "2oX9mJKdEhJpINqNuq3Meq",
+        "subject": "[Reporte] Conciliación stmt-e2e-ok-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test",
+          "operaciones@example.test"
+        ],
+        "date": "2026-10-03T06:31:28Z",
+        "size": 2911
+      }
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "API: 4 decisiones APPROVE registradas y auditadas",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        }
+      ]
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "API: estado de los casos = APPROVED",
+      "ok": true,
+      "detail": [
+        "APPROVED",
+        "APPROVED",
+        "APPROVED",
+        "APPROVED"
+      ]
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "API: run completado con 6 EXACT y 4 UNMATCHED (etiquetas del fixture)",
+      "ok": true,
+      "detail": {
+        "EXACT": 6,
+        "UNMATCHED": 4
+      }
+    },
+    {
+      "scenario": "A_camino_feliz",
+      "name": "API: reintento con la misma idempotency_key no duplica (replayed)",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "decision_id": "ee9f3732-eaf6-42f6-a5da-d0e9c07ae8b6",
+        "replayed": true
+      }
+    },
+    {
+      "scenario": "B_entradas_invalidas",
+      "name": "campos y filas inválidas -> 400 con errores",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "errors": [
+          {
+            "field": "statement_id",
+            "message": "obligatorio, 3-49 caracteres [A-Za-z0-9._-]"
+          },
+          {
+            "field": "currency",
+            "message": "moneda no soportada; válidas: USD, BOB"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "B_entradas_invalidas",
+      "name": "CSV con encabezado incompleto -> 400 con errores",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "errors": [
+          {
+            "field": "statement_csv",
+            "message": "faltan columnas: source_record_id, operation, currency, status, occurred_at, received_at"
+          },
+          {
+            "field": "statement",
+            "message": "no hay filas"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "B_entradas_invalidas",
+      "name": "ventana invertida y cutoff anterior -> 400 con errores",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "errors": [
+          {
+            "field": "window_end",
+            "message": "debe ser posterior a window_start"
+          },
+          {
+            "field": "cutoff_at",
+            "message": "no puede ser anterior a window_end"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "B_entradas_invalidas",
+      "name": "cuerpo no JSON (text/csv) -> 400 con errores",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "errors": [
+          {
+            "field": "content-type",
+            "message": "se esperaba application/json (llegó \"text/csv\"); el CSV va dentro del campo statement_csv"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "B_entradas_invalidas",
+      "name": "JSON ilegible -> 422 (parser de n8n)",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "errors": "Failed to parse request body"
+      }
+    },
+    {
+      "scenario": "B_entradas_invalidas",
+      "name": "las ejecuciones rechazadas no ejecutan nodos de la API",
+      "ok": true,
+      "detail": [
+        {
+          "execution_id": "16",
+          "status": "success"
+        },
+        {
+          "execution_id": "15",
+          "status": "success"
+        },
+        {
+          "execution_id": "14",
+          "status": "success"
+        },
+        {
+          "execution_id": "13",
+          "status": "success"
+        }
+      ]
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "webhook responde 202 con execution_id",
+      "ok": true,
+      "detail": {
+        "status": 202,
+        "execution_id": "17"
+      }
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "la ejecución queda esperando la decisión humana (Wait)",
+      "ok": true,
+      "detail": "waiting"
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "correo de aprobación en Mailpit con enlace firmado",
+      "ok": true,
+      "detail": {
+        "id": "7crukSnJnaqQHr9gjyyFjA",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-down-20261003063059: 4 excepciones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test"
+        ],
+        "date": "2026-10-03T06:31:41Z",
+        "size": 4669
+      }
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "todas las excepciones usan el fallback determinístico",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "source": "fallback",
+          "reasons": [
+            "ollama_no_disponible: connect ECONNREFUSED 127.0.0.1:9"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "source": "fallback",
+          "reasons": [
+            "ollama_no_disponible: connect ECONNREFUSED 127.0.0.1:9"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "source": "fallback",
+          "reasons": [
+            "ollama_no_disponible: connect ECONNREFUSED 127.0.0.1:9"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "source": "fallback",
+          "reasons": [
+            "ollama_no_disponible: connect ECONNREFUSED 127.0.0.1:9"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_ADJUSTMENT_REVIEW"
+        }
+      ]
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "la ejecución termina en success",
+      "ok": true,
+      "detail": "success"
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "correo de reporte final en Mailpit (revisor + operaciones)",
+      "ok": true,
+      "detail": {
+        "id": "33RKtRsGH0L9O8DZwYVKK7",
+        "subject": "[Reporte] Conciliación stmt-e2e-down-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test",
+          "operaciones@example.test"
+        ],
+        "date": "2026-10-03T06:31:43Z",
+        "size": 2909
+      }
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "API: 4 decisiones REJECT registradas y auditadas",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "status": "REJECTED",
+          "decision": "REJECT"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "status": "REJECTED",
+          "decision": "REJECT"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "status": "REJECTED",
+          "decision": "REJECT"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "status": "REJECTED",
+          "decision": "REJECT"
+        }
+      ]
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "API: estado de los casos = REJECTED",
+      "ok": true,
+      "detail": [
+        "REJECTED",
+        "REJECTED",
+        "REJECTED",
+        "REJECTED"
+      ]
+    },
+    {
+      "scenario": "C_ollama_caido",
+      "name": "API: run completado con 6 EXACT y 4 UNMATCHED (etiquetas del fixture)",
+      "ok": true,
+      "detail": {
+        "EXACT": 6,
+        "UNMATCHED": 4
+      }
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "webhook responde 202 con execution_id",
+      "ok": true,
+      "detail": {
+        "status": 202,
+        "execution_id": "18"
+      }
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "la ejecución queda esperando la decisión humana (Wait)",
+      "ok": true,
+      "detail": "waiting"
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "correo de aprobación en Mailpit con enlace firmado",
+      "ok": true,
+      "detail": {
+        "id": "6ornl3afGg6MScd4ORQu7y",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-inv-20261003063059: 4 excepciones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test"
+        ],
+        "date": "2026-10-03T06:32:02Z",
+        "size": 4500
+      }
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "todas las excepciones usan el fallback determinístico",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "source": "fallback",
+          "reasons": [
+            "json_invalido"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "source": "fallback",
+          "reasons": [
+            "json_invalido"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "source": "fallback",
+          "reasons": [
+            "json_invalido"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "source": "fallback",
+          "reasons": [
+            "json_invalido"
+          ],
+          "causa": "indeterminado",
+          "accion": "REQUEST_ADJUSTMENT_REVIEW"
+        }
+      ]
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "la ejecución termina en success",
+      "ok": true,
+      "detail": "success"
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "correo de reporte final en Mailpit (revisor + operaciones)",
+      "ok": true,
+      "detail": {
+        "id": "0hdUSRvCLRcrCXhvHFtjYo",
+        "subject": "[Reporte] Conciliación stmt-e2e-inv-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test",
+          "operaciones@example.test"
+        ],
+        "date": "2026-10-03T06:32:04Z",
+        "size": 2913
+      }
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "API: 4 decisiones APPROVE registradas y auditadas",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "status": "APPROVED",
+          "decision": "APPROVE"
+        }
+      ]
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "API: estado de los casos = APPROVED",
+      "ok": true,
+      "detail": [
+        "APPROVED",
+        "APPROVED",
+        "APPROVED",
+        "APPROVED"
+      ]
+    },
+    {
+      "scenario": "D_respuesta_invalida_modelo",
+      "name": "API: run completado con 6 EXACT y 4 UNMATCHED (etiquetas del fixture)",
+      "ok": true,
+      "detail": {
+        "EXACT": 6,
+        "UNMATCHED": 4
+      }
+    },
+    {
+      "scenario": "E_error_api_error_trigger",
+      "name": "webhook acepta (202) antes del fallo",
+      "ok": true,
+      "detail": {
+        "status": "accepted",
+        "execution_id": "19",
+        "statement_id": "stmt-e2e-err-20261003063059",
+        "transactions": 18,
+        "warnings": [],
+        "next": "Conciliación en curso; el revisor recibirá un correo de aprobación y el reporte final llegará por correo."
+      }
+    },
+    {
+      "scenario": "E_error_api_error_trigger",
+      "name": "la ejecución falla en \"Crear lote (API)\" por 422 de la API",
+      "ok": true,
+      "detail": {
+        "status": "error",
+        "node": "Crear lote (API)",
+        "error": "Your request is invalid or could not be processed by the service"
+      }
+    },
+    {
+      "scenario": "E_error_api_error_trigger",
+      "name": "Error Trigger envía correo a operaciones",
+      "ok": true,
+      "detail": {
+        "id": "1LTGt1VaJPGAFRls8ipK0R",
+        "subject": "[ERROR] Conciliación de pagos asistida por IA con aprobación humana: ejecución #19 falló en Crear lote (API)",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "operaciones@example.test"
+        ],
+        "date": "2026-10-03T06:32:06Z",
+        "size": 1493
+      }
+    },
+    {
+      "scenario": "E_error_api_error_trigger",
+      "name": "el correo de error no contiene JWT ni claves",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "scenario": "E_error_api_error_trigger",
+      "name": "workflow de errores ejecutado con éxito",
+      "ok": true,
+      "detail": {
+        "execution_id": "20",
+        "status": "success"
+      }
+    },
+    {
+      "scenario": "F_inyeccion_deshabilitada",
+      "name": "con RECON_FAULT_INJECTION=false, test_fault se rechaza con 400",
+      "ok": true,
+      "detail": [
+        {
+          "field": "test_fault",
+          "message": "inyección de fallas deshabilitada en este entorno"
+        }
+      ]
+    },
+    {
+      "scenario": "seguridad",
+      "name": "workflows exportados sin JWT, claves ni contraseñas",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "passed": 43,
+  "failed": 0
+}
