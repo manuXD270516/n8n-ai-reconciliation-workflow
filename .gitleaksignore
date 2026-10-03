@@ -1,0 +1,2 @@
+# Falso positivo: la línea lee la clave desde .env (env.N8N_API_KEY); no hay ninguna clave literal.
+315cc0c9957420f62d97483914a71e5ea9faa42a:scripts/e2e.mjs:generic-api-key:57
