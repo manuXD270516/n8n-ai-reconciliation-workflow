@@ -71,7 +71,7 @@ El workflow se construyó con agentes de IA (Claude Code) bajo mi dirección:
 - Dirigí y revisé la implementación: el flujo se diseñó a partir de lo que la API permite de verdad, explorada por OpenAPI y con llamadas de prueba. Tiene 46 nodos funcionales y 4 notas (13 Code, 16 HTTP Request, 3 JWT, 5 If, 2 Wait, 2 Email, 2 Respond to Webhook, Webhook, Schedule y Stop and Error), más un workflow de errores aparte.
 - Revisé las decisiones de seguridad y de IA: validación de entrada, polling acotado, prompt con enums restringidos por discrepancia, validador de la salida de la IA (formato, enums, *grounding* de montos y contradicciones), fallback determinístico y redacción de secretos en las alertas.
 - Validé el resultado con la corrida end-to-end real (`scripts/e2e.ps1`), con escenarios negativos y verificación independiente en la API y en Mailpit.
-- **Hallazgo real:** la corrida e2e encontró un bug en la API (`NEEDS_INFORMATION` responde 500). Quedó documentado con evidencia y el workflow no expone esa opción hasta que se corrija. Ver *Limitaciones*.
+- **Hallazgo real:** la corrida e2e encontró un bug en la API (`NEEDS_INFORMATION` respondía 500). Quedó documentado con evidencia, se corrigió en la API y el escenario G del e2e lo verifica. Ver *Limitaciones*.
 
 ## Cómo ejecutarlo
 
@@ -115,28 +115,29 @@ Contrato del webhook (JSON):
 
 ## Resultados medidos (corrida e2e real del 2026-10-03)
 
-`node scripts/e2e.mjs`: **43 verificaciones OK, 0 fallidas** ([evidence/e2e-summary.json](evidence/e2e-summary.json)).
+`node scripts/e2e.mjs`: **52 verificaciones OK, 0 fallidas** ([evidence/e2e-summary.json](evidence/e2e-summary.json)).
 
 | Escenario | Ejecución n8n | Resultado verificado |
 |---|---|---|
-| A. Camino feliz | **#12** success | 18 transacciones (9 libro + 9 extracto), 10 pagos: **6 EXACT**, **4 excepciones**. **4/4** clasificaciones de Ollama válidas. Formulario llenado con Playwright: **4 decisiones APPROVE** registradas. La API confirma los casos `APPROVED`, el aprobador `reviewer:revisora.demo@example.test` y `decision.record` en la auditoría. Reenviar la decisión con la misma `idempotency_key` devolvió `replayed: true` |
-| B. Entradas inválidas | #13–#16 | 400 con errores por campo y fila (campos, CSV sin columnas, ventana invertida, `text/csv`). El JSON ilegible lo corta n8n con 422 antes del workflow. Ninguna ejecución rechazada llamó a la API |
-| C. Ollama caído (falla inyectada: puerto cerrado) | **#17** success | 4/4 al fallback determinístico (`ECONNREFUSED`). **REJECT** registrado en 4 casos (`REJECTED` en la API) |
-| D. Respuesta inválida del modelo (se le pide texto libre, sin schema) | **#18** success | El validador rechazó 4/4 (`json_invalido`) y entró el fallback. **APPROVE** registrado |
-| E. Error de la API (falla inyectada: `batch_id` inválido) | **#19** error, #20 (workflow de errores) success | Falla en `Crear lote (API)` (422). El Error Trigger envió un correo sanitizado a operaciones, sin JWT ni claves |
+| A. Camino feliz | **#22** success | 18 transacciones (9 libro + 9 extracto), 10 pagos: **6 EXACT**, **4 excepciones**. **4/4** clasificaciones de Ollama válidas. Formulario llenado con Playwright: **4 decisiones APPROVE** registradas. La API confirma los casos `APPROVED`, el aprobador `reviewer:revisora.demo@example.test` y `decision.record` en la auditoría. Reenviar la decisión con la misma `idempotency_key` devolvió `replayed: true` |
+| B. Entradas inválidas | #23–#26 | 400 con errores por campo y fila (campos, CSV sin columnas, ventana invertida, `text/csv`). El JSON ilegible lo corta n8n con 422 antes del workflow. Ninguna ejecución rechazada llamó a la API |
+| C. Ollama caído (falla inyectada: puerto cerrado) | **#27** success | 4/4 al fallback determinístico (`ECONNREFUSED`). **REJECT** registrado en 4 casos (`REJECTED` en la API) |
+| D. Respuesta inválida del modelo (se le pide texto libre, sin schema) | **#28** success | El validador rechazó 4/4 (`json_invalido`) y entró el fallback. **APPROVE** registrado |
+| E. Error de la API (falla inyectada: `batch_id` inválido) | **#30** error, #31 (workflow de errores) success | Falla en `Crear lote (API)` (422). El Error Trigger envió un correo sanitizado a operaciones, sin JWT ni claves |
 | F. Inyección deshabilitada | — | `test_fault` rechazado con 400 |
+| G. Pedir más información | **#29** success | Formulario con “Pedir más información”: **4 decisiones NEEDS_INFORMATION** registradas. La API confirma los casos en `NEEDS_INFORMATION` y `decision.record` en la auditoría (antes de la corrección de la API, esta decisión respondía 500) |
 
-Tiempos del camino feliz (ejecución #12, medidos por el propio workflow):
+Tiempos del camino feliz (ejecución #22, medidos por el propio workflow):
 
 | Tramo | Tiempo |
 |---|---|
-| Validación + ingesta | 0,25 s |
-| Run en la API | 0,21 s |
-| Espera de investigaciones | 4,6 s |
-| Clasificación IA (4 excepciones) | 8,9 s |
-| **Automatizado total** | **15,4 s** |
-| Espera humana (formulario llenado por el e2e) | 2,3 s |
-| Total de la ejecución | 17,7 s |
+| Validación + ingesta | 0,71 s |
+| Run en la API | 0,48 s |
+| Espera de investigaciones | 7,7 s |
+| Clasificación IA (4 excepciones) | 17,6 s |
+| **Automatizado total** | **28,2 s** |
+| Espera humana (formulario llenado por el e2e) | 2,9 s |
+| Total de la ejecución | 31,1 s |
 
 Correos verificados en Mailpit: aprobación (al revisor) y reporte final (al revisor y a operaciones) en cada escenario, más la alerta de error.
 
@@ -171,10 +172,10 @@ Capturas:
   - por eso sólo produce una **propuesta**: la prioridad la fija una regla y la decisión es humana;
   - la investigación de la API usa su proveedor *scripted* (`SIMULATED`), no un LLM.
 - **Validación semántica limitada:** el validador detecta formato, valores fuera de enum, montos inventados y contradicciones obvias, pero no garantiza que el resumen sea correcto. En una iteración anterior el modelo confundió “falta en el banco” con “falta en el libro”. Desde entonces el prompt incluye el significado de cada discrepancia y existe la regla de contradicción.
-- **Bug encontrado en la API:** con `NEEDS_INFORMATION`, la API responde 500 (`DataError`).
-  - Causa probable: la columna `status` de las recomendaciones es `String(16)` y el valor tiene 17 caracteres.
-  - Evidencia: [evidence/hallazgo-api-needs-information.json](evidence/hallazgo-api-needs-information.json), ejecución #10.
-  - Mientras tanto, el formulario sólo ofrece Aprobar y Rechazar.
+- **Bug encontrado en la API (corregido):** con `NEEDS_INFORMATION`, la API respondía 500 (`DataError`).
+  - Causa: la columna `status` de las recomendaciones era `String(16)` y el valor tiene 17 caracteres. La migración `0008` de la API la amplía a `String(24)`.
+  - Evidencia: [evidence/hallazgo-api-needs-information.json](evidence/hallazgo-api-needs-information.json), ejecución #10 (falla) y #29 (escenario G, corregido).
+  - El formulario vuelve a ofrecer Aprobar, Rechazar y Pedir más información.
 - **Decisión global:** el revisor toma una decisión que se aplica a todas las excepciones de la ejecución. Se registra **por caso**, pero el formulario no permite decidir caso por caso.
 - **Fallas inyectadas:** los escenarios “Ollama caído”, “respuesta inválida” y “error de API” se provocan con `test_fault`. Esa opción sólo se acepta con `RECON_FAULT_INJECTION=true`, que el e2e activa y desactiva. No se apagó el Ollama real, que comparten otros proyectos.
 - **El Schedule existe pero está desactivado** y no se ejercitó en el e2e.

@@ -1,8 +1,8 @@
 {
-  "started_at": "2026-10-03T06:30:59.672Z",
+  "started_at": "2026-10-03T07:10:17.727Z",
   "scenarios": {
     "A_camino_feliz": {
-      "execution_id": "12",
+      "execution_id": "22",
       "status": "success",
       "outcome": "COMPLETED_WITH_HUMAN_DECISION",
       "metrics": {
@@ -25,13 +25,13 @@
         "reviewer": "revisora.demo@example.test"
       },
       "timings_ms": {
-        "total": 17687,
-        "validation_to_ingest_done": 254,
-        "run_in_api": 209,
-        "investigations_wait": 4601,
-        "ai_classification": 8895,
-        "human_wait": 2321,
-        "automated": 15366
+        "total": 31060,
+        "validation_to_ingest_done": 709,
+        "run_in_api": 476,
+        "investigations_wait": 7690,
+        "ai_classification": 17617,
+        "human_wait": 2874,
+        "automated": 28186
       }
     },
     "B_entradas_invalidas": {
@@ -58,14 +58,14 @@
         }
       ],
       "executions": [
-        "16",
-        "15",
-        "14",
-        "13"
+        "26",
+        "25",
+        "24",
+        "23"
       ]
     },
     "C_ollama_caido": {
-      "execution_id": "17",
+      "execution_id": "27",
       "status": "success",
       "outcome": "COMPLETED_WITH_HUMAN_DECISION",
       "metrics": {
@@ -88,17 +88,17 @@
         "reviewer": "revisora.demo@example.test"
       },
       "timings_ms": {
-        "total": 10853,
-        "validation_to_ingest_done": 164,
-        "run_in_api": 243,
-        "investigations_wait": 4596,
-        "ai_classification": 2054,
-        "human_wait": 2532,
-        "automated": 8321
+        "total": 12595,
+        "validation_to_ingest_done": 210,
+        "run_in_api": 436,
+        "investigations_wait": 6122,
+        "ai_classification": 2076,
+        "human_wait": 2219,
+        "automated": 10376
       }
     },
     "D_respuesta_invalida_modelo": {
-      "execution_id": "18",
+      "execution_id": "28",
       "status": "success",
       "outcome": "COMPLETED_WITH_HUMAN_DECISION",
       "metrics": {
@@ -121,20 +121,53 @@
         "reviewer": "revisora.demo@example.test"
       },
       "timings_ms": {
-        "total": 18548,
-        "validation_to_ingest_done": 155,
-        "run_in_api": 321,
-        "investigations_wait": 6112,
-        "ai_classification": 8764,
-        "human_wait": 1968,
-        "automated": 16580
+        "total": 20476,
+        "validation_to_ingest_done": 188,
+        "run_in_api": 320,
+        "investigations_wait": 6122,
+        "ai_classification": 10519,
+        "human_wait": 2038,
+        "automated": 18438
+      }
+    },
+    "G_pedir_informacion": {
+      "execution_id": "29",
+      "status": "success",
+      "outcome": "COMPLETED_WITH_HUMAN_DECISION",
+      "metrics": {
+        "transactions_received": 18,
+        "ledger_rows": 9,
+        "statement_rows": 9,
+        "rows_accepted_by_api": 18,
+        "rows_quarantined_by_api": 0,
+        "payments_evaluated": 10,
+        "reconciled_exact": 6,
+        "exceptions": 4,
+        "match_status_counts": {
+          "EXACT": 6,
+          "UNMATCHED": 4
+        },
+        "ai_classified_valid": 4,
+        "ai_fallback": 0,
+        "decisions_registered": 4,
+        "decision": "NEEDS_INFORMATION",
+        "reviewer": "revisora.demo@example.test"
+      },
+      "timings_ms": {
+        "total": 18719,
+        "validation_to_ingest_done": 183,
+        "run_in_api": 335,
+        "investigations_wait": 6110,
+        "ai_classification": 9152,
+        "human_wait": 1657,
+        "automated": 17062
       }
     },
     "E_error_api_error_trigger": {
-      "execution_id": "19",
+      "execution_id": "30",
       "status": "error",
       "failed_node": "Crear lote (API)",
-      "error_workflow_execution": "20"
+      "error_workflow_execution": "31"
     },
     "F_inyeccion_deshabilitada": {
       "status": 400,
@@ -157,7 +190,7 @@
     "n8n_version": "2.41.6",
     "model": "qwen2.5:7b"
   },
-  "finished_at": "2026-10-03T06:32:18.875Z",
+  "finished_at": "2026-10-03T07:12:23.601Z",
   "checks": [
     {
       "scenario": "preflight",
@@ -182,7 +215,7 @@
       "ok": true,
       "detail": {
         "status": 202,
-        "execution_id": "12"
+        "execution_id": "22"
       }
     },
     {
@@ -196,14 +229,14 @@
       "name": "correo de aprobación en Mailpit con enlace firmado",
       "ok": true,
       "detail": {
-        "id": "6FE2ITeKB33YRiM9PgbHBV",
-        "subject": "[Aprobación requerida] Conciliación stmt-e2e-ok-20261003063059: 4 excepciones",
+        "id": "6s7HV1b7QeN96JYlsYj9GJ",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-ok-20261003071017: 4 excepciones",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "revisor@example.test"
         ],
-        "date": "2026-10-03T06:31:25Z",
-        "size": 4301
+        "date": "2026-10-03T07:11:00Z",
+        "size": 4322
       }
     },
     {
@@ -252,15 +285,15 @@
       "name": "correo de reporte final en Mailpit (revisor + operaciones)",
       "ok": true,
       "detail": {
-        "id": "2oX9mJKdEhJpINqNuq3Meq",
-        "subject": "[Reporte] Conciliación stmt-e2e-ok-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "id": "6ZqZLcqBM41bs2Eof2H4MH",
+        "subject": "[Reporte] Conciliación stmt-e2e-ok-20261003071017: 6/10 conciliadas, 4 excepciones, 4 decisiones",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "revisor@example.test",
           "operaciones@example.test"
         ],
-        "date": "2026-10-03T06:31:28Z",
-        "size": 2911
+        "date": "2026-10-03T07:11:03Z",
+        "size": 2912
       }
     },
     {
@@ -316,7 +349,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "decision_id": "ee9f3732-eaf6-42f6-a5da-d0e9c07ae8b6",
+        "decision_id": "57bc56cb-b713-4c81-9098-69135101301e",
         "replayed": true
       }
     },
@@ -403,19 +436,19 @@
       "ok": true,
       "detail": [
         {
-          "execution_id": "16",
+          "execution_id": "26",
           "status": "success"
         },
         {
-          "execution_id": "15",
+          "execution_id": "25",
           "status": "success"
         },
         {
-          "execution_id": "14",
+          "execution_id": "24",
           "status": "success"
         },
         {
-          "execution_id": "13",
+          "execution_id": "23",
           "status": "success"
         }
       ]
@@ -426,7 +459,7 @@
       "ok": true,
       "detail": {
         "status": 202,
-        "execution_id": "17"
+        "execution_id": "27"
       }
     },
     {
@@ -440,13 +473,13 @@
       "name": "correo de aprobación en Mailpit con enlace firmado",
       "ok": true,
       "detail": {
-        "id": "7crukSnJnaqQHr9gjyyFjA",
-        "subject": "[Aprobación requerida] Conciliación stmt-e2e-down-20261003063059: 4 excepciones",
+        "id": "4QkZ08hIYGcvdb3HTAU91x",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-down-20261003071017: 4 excepciones",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "revisor@example.test"
         ],
-        "date": "2026-10-03T06:31:41Z",
+        "date": "2026-10-03T07:11:18Z",
         "size": 4669
       }
     },
@@ -504,15 +537,15 @@
       "name": "correo de reporte final en Mailpit (revisor + operaciones)",
       "ok": true,
       "detail": {
-        "id": "33RKtRsGH0L9O8DZwYVKK7",
-        "subject": "[Reporte] Conciliación stmt-e2e-down-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "id": "7ibJS8FxzmKEBCNm2XYJ74",
+        "subject": "[Reporte] Conciliación stmt-e2e-down-20261003071017: 6/10 conciliadas, 4 excepciones, 4 decisiones",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "revisor@example.test",
           "operaciones@example.test"
         ],
-        "date": "2026-10-03T06:31:43Z",
-        "size": 2909
+        "date": "2026-10-03T07:11:20Z",
+        "size": 2910
       }
     },
     {
@@ -568,7 +601,7 @@
       "ok": true,
       "detail": {
         "status": 202,
-        "execution_id": "18"
+        "execution_id": "28"
       }
     },
     {
@@ -582,13 +615,13 @@
       "name": "correo de aprobación en Mailpit con enlace firmado",
       "ok": true,
       "detail": {
-        "id": "6ornl3afGg6MScd4ORQu7y",
-        "subject": "[Aprobación requerida] Conciliación stmt-e2e-inv-20261003063059: 4 excepciones",
+        "id": "6MoaH9cXHuQbpAX58kWOI1",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-inv-20261003071017: 4 excepciones",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "revisor@example.test"
         ],
-        "date": "2026-10-03T06:32:02Z",
+        "date": "2026-10-03T07:11:40Z",
         "size": 4500
       }
     },
@@ -646,15 +679,15 @@
       "name": "correo de reporte final en Mailpit (revisor + operaciones)",
       "ok": true,
       "detail": {
-        "id": "0hdUSRvCLRcrCXhvHFtjYo",
-        "subject": "[Reporte] Conciliación stmt-e2e-inv-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "id": "4SB51yC3sMFUCrSvIacHFs",
+        "subject": "[Reporte] Conciliación stmt-e2e-inv-20261003071017: 6/10 conciliadas, 4 excepciones, 4 decisiones",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "revisor@example.test",
           "operaciones@example.test"
         ],
-        "date": "2026-10-03T06:32:04Z",
-        "size": 2913
+        "date": "2026-10-03T07:11:43Z",
+        "size": 2914
       }
     },
     {
@@ -705,13 +738,147 @@
       }
     },
     {
+      "scenario": "G_pedir_informacion",
+      "name": "webhook responde 202 con execution_id",
+      "ok": true,
+      "detail": {
+        "status": 202,
+        "execution_id": "29"
+      }
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "la ejecución queda esperando la decisión humana (Wait)",
+      "ok": true,
+      "detail": "waiting"
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "correo de aprobación en Mailpit con enlace firmado",
+      "ok": true,
+      "detail": {
+        "id": "02nSunEOhzGYbYQcgLhyN6",
+        "subject": "[Aprobación requerida] Conciliación stmt-e2e-info-20261003071017: 4 excepciones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test"
+        ],
+        "date": "2026-10-03T07:12:02Z",
+        "size": 4361
+      }
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "al menos una clasificación de Ollama validada (el resto, fallback con motivo)",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "error_de_datos_o_mapeo",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "error_de_datos_o_mapeo",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "rechazo_o_reverso_del_proveedor",
+          "accion": "REQUEST_PROVIDER_INFO"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "source": "ollama",
+          "reasons": [],
+          "causa": "error_de_datos_o_mapeo",
+          "accion": "REQUEST_ADJUSTMENT_REVIEW"
+        }
+      ]
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "la ejecución termina en success",
+      "ok": true,
+      "detail": "success"
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "correo de reporte final en Mailpit (revisor + operaciones)",
+      "ok": true,
+      "detail": {
+        "id": "5yGjPSxcoXQsYB32BlTG8t",
+        "subject": "[Reporte] Conciliación stmt-e2e-info-20261003071017: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+        "from": "n8n-conciliacion@example.test",
+        "to": [
+          "revisor@example.test",
+          "operaciones@example.test"
+        ],
+        "date": "2026-10-03T07:12:04Z",
+        "size": 3007
+      }
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "API: 4 decisiones NEEDS_INFORMATION registradas y auditadas",
+      "ok": true,
+      "detail": [
+        {
+          "ref": "pay-n8n-0007",
+          "status": "NEEDS_INFORMATION",
+          "decision": "NEEDS_INFORMATION"
+        },
+        {
+          "ref": "pay-n8n-0008",
+          "status": "NEEDS_INFORMATION",
+          "decision": "NEEDS_INFORMATION"
+        },
+        {
+          "ref": "pay-n8n-0009",
+          "status": "NEEDS_INFORMATION",
+          "decision": "NEEDS_INFORMATION"
+        },
+        {
+          "ref": "pay-n8n-0010",
+          "status": "NEEDS_INFORMATION",
+          "decision": "NEEDS_INFORMATION"
+        }
+      ]
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "API: estado de los casos = NEEDS_INFORMATION",
+      "ok": true,
+      "detail": [
+        "NEEDS_INFORMATION",
+        "NEEDS_INFORMATION",
+        "NEEDS_INFORMATION",
+        "NEEDS_INFORMATION"
+      ]
+    },
+    {
+      "scenario": "G_pedir_informacion",
+      "name": "API: run completado con 6 EXACT y 4 UNMATCHED (etiquetas del fixture)",
+      "ok": true,
+      "detail": {
+        "EXACT": 6,
+        "UNMATCHED": 4
+      }
+    },
+    {
       "scenario": "E_error_api_error_trigger",
       "name": "webhook acepta (202) antes del fallo",
       "ok": true,
       "detail": {
         "status": "accepted",
-        "execution_id": "19",
-        "statement_id": "stmt-e2e-err-20261003063059",
+        "execution_id": "30",
+        "statement_id": "stmt-e2e-err-20261003071017",
         "transactions": 18,
         "warnings": [],
         "next": "Conciliación en curso; el revisor recibirá un correo de aprobación y el reporte final llegará por correo."
@@ -732,13 +899,13 @@
       "name": "Error Trigger envía correo a operaciones",
       "ok": true,
       "detail": {
-        "id": "1LTGt1VaJPGAFRls8ipK0R",
-        "subject": "[ERROR] Conciliación de pagos asistida por IA con aprobación humana: ejecución #19 falló en Crear lote (API)",
+        "id": "78az5y1296LUpIzlRNOMbs",
+        "subject": "[ERROR] Conciliación de pagos asistida por IA con aprobación humana: ejecución #30 falló en Crear lote (API)",
         "from": "n8n-conciliacion@example.test",
         "to": [
           "operaciones@example.test"
         ],
-        "date": "2026-10-03T06:32:06Z",
+        "date": "2026-10-03T07:12:06Z",
         "size": 1493
       }
     },
@@ -753,7 +920,7 @@
       "name": "workflow de errores ejecutado con éxito",
       "ok": true,
       "detail": {
-        "execution_id": "20",
+        "execution_id": "31",
         "status": "success"
       }
     },
@@ -775,6 +942,6 @@
       "detail": []
     }
   ],
-  "passed": 43,
+  "passed": 52,
   "failed": 0
 }

@@ -112,7 +112,7 @@ Si la respuesta se rechaza, entra el **fallback determinístico**: causa `indete
 
 | Nodo | Tipo | Qué hace |
 |---|---|---|
-| Esperar decisión humana (formulario) | Wait (resume: form) | Formulario con Decisión (Aprobar o Rechazar), Motivo y Correo del revisor. Muestra el resumen. Expira a las 24 h |
+| Esperar decisión humana (formulario) | Wait (resume: form) | Formulario con Decisión (Aprobar, Rechazar o Pedir más información), Motivo y Correo del revisor. Muestra el resumen. Expira a las 24 h |
 | Normalizar decisión humana | Code | Mapea la opción a `APPROVE` o `REJECT` y valida el correo y el motivo (10 caracteres o más). Arma los claims del supervisor con `sub = reviewer:<correo>`, porque la API exige que decida alguien distinto de quien propuso |
 | ¿Decisión recibida? | If | Si el Wait expiró, va al reporte con el resultado `NO_DECISION_TIMEOUT` |
 | Firmar JWT supervisor (revisor) | JWT | TTL de 10 min |

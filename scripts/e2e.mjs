@@ -9,6 +9,7 @@
 //   D. Respuesta inválida del modelo (texto libre real) -> validador -> fallback -> APPROVE
 //   E. Error de la API (falla inyectada: batch_id inválido) -> Error Trigger -> correo sanitizado
 //   F. Con la inyección deshabilitada, test_fault se rechaza con 400
+//   G. Pedir más información: formulario -> NEEDS_INFORMATION registrado en la API
 // Verifica en la API (token de auditor firmado aquí con la clave dev) y en Mailpit, y guarda
 // la evidencia sanitizada en evidence/.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -291,6 +292,7 @@ async function main() {
     await invalidInputs();
     await runWithApproval('C_ollama_caido', { statementId: `stmt-e2e-down-${stamp}`, fault: 'ollama_unreachable', choice: 'Rechazar las propuestas', expectDecision: 'REJECT', expectAi: 'fallback' });
     await runWithApproval('D_respuesta_invalida_modelo', { statementId: `stmt-e2e-inv-${stamp}`, fault: 'ollama_invalid_json', choice: 'Aprobar las propuestas', expectDecision: 'APPROVE', expectAi: 'fallback' });
+    await runWithApproval('G_pedir_informacion', { statementId: `stmt-e2e-info-${stamp}`, choice: 'Pedir más información', expectDecision: 'NEEDS_INFORMATION', expectAi: 'ollama' });
     await apiErrorPath();
   } finally {
     log('deshabilitando inyección de fallas');

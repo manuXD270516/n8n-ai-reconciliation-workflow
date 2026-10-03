@@ -197,7 +197,7 @@ node('Esperar decisión humana (formulario)', 'n8n-nodes-base.wait', 1.1, [0, Y4
   formDescription: "={{ $('Consolidar para revisión humana').first().json.form_text }}",
   formFields: {
     values: [
-      { fieldLabel: 'Decisión', fieldType: 'dropdown', fieldOptions: { values: [{ option: 'Aprobar las propuestas' }, { option: 'Rechazar las propuestas' }] }, requiredField: true },
+      { fieldLabel: 'Decisión', fieldType: 'dropdown', fieldOptions: { values: [{ option: 'Aprobar las propuestas' }, { option: 'Rechazar las propuestas' }, { option: 'Pedir más información' }] }, requiredField: true },
       { fieldLabel: 'Motivo', fieldType: 'textarea', placeholder: 'Mínimo 10 caracteres. Queda en la auditoría de la API.', requiredField: true },
       { fieldLabel: 'Correo del revisor', fieldType: 'email', placeholder: 'revisor@example.test', requiredField: true },
     ],

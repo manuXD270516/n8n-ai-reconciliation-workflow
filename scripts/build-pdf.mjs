@@ -16,6 +16,7 @@ const C = ev('e2e-C_ollama_caido.json');
 const D = ev('e2e-D_respuesta_invalida_modelo.json');
 const E = ev('e2e-E_error_api_error_trigger.json');
 const B = ev('e2e-B_entradas_invalidas.json');
+const G = ev('e2e-G_pedir_informacion.json');
 const bug = ev('hallazgo-api-needs-information.json');
 const workflow = JSON.parse(readFileSync(join(root, 'workflows', 'conciliacion-ia-aprobacion-humana.json'), 'utf8'));
 copyFileSync(join(root, 'workflows', 'conciliacion-ia-aprobacion-humana.json'), join(out, 'workflow-n8n.json'));
@@ -61,6 +62,7 @@ const rows = [
   ['D. Respuesta inválida del modelo', `#${D.execution_id}`, `success · validador rechazó 4/4 (json_invalido) · fallback · ${D.report.metrics.decisions_registered} APPROVE`],
   ['E. Error de API (falla inyectada)', `#${E.execution_id} / #${E.error_workflow_execution}`, `error en "${E.failed_node.node}" (422) · Error Trigger envió correo sanitizado`],
   ['F. Inyección deshabilitada', '—', 'test_fault rechazado con 400'],
+  ['G. Pedir más información', `#${G.execution_id}`, `success · ${G.report.metrics.decisions_registered} NEEDS_INFORMATION auditadas · casos en NEEDS_INFORMATION en la API`],
 ];
 
 const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Evidencia n8n</title>
@@ -95,8 +97,8 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
 <ul>
   <li>Definí el proceso a automatizar, el alcance y los criterios de aceptación: la IA solo propone, una persona decide y cada decisión queda auditada en la API.</li>
   <li>Dirigí la implementación con agentes de IA (Claude Code) y revisé el diseño resultante: ${workflow.nodes.length - 4} nodos funcionales, 13 nodos Code (validación, polling, prompt, validador de la salida de la IA, fallback y reportes), infraestructura Compose y un <code>setup.ps1</code> que importa credenciales y workflows con <code>n8n import</code>.</li>
-  <li>Validé el resultado con una corrida end-to-end real de 6 escenarios, incluidos los negativos, con verificación independiente en la API y en Mailpit y evidencia JSON.</li>
-  <li>Hallazgo: el e2e detectó un bug real en la API (<code>NEEDS_INFORMATION</code> responde 500). Quedó documentado y el workflow no expone esa opción.</li>
+  <li>Validé el resultado con una corrida end-to-end real de 7 escenarios, incluidos los negativos, con verificación independiente en la API y en Mailpit y evidencia JSON.</li>
+  <li>Hallazgo: el e2e detectó un bug real en la API (<code>NEEDS_INFORMATION</code> respondía 500). Quedó documentado, se corrigió en la API y el escenario G lo verifica.</li>
 </ul>
 
 <h2>Resultado medido (corrida real, ejecución n8n #${esc(A.execution_id)})</h2>
@@ -143,7 +145,7 @@ ${rows.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])
   <li><b>Fallas inyectadas:</b> los escenarios C, D y E se provocan con <code>test_fault</code>, que sólo se acepta con <code>RECON_FAULT_INJECTION=true</code>. No se apagó el Ollama real.</li>
   <li><b>Decisión global:</b> la decisión del formulario aplica a todas las excepciones de la ejecución, aunque se registra caso por caso.</li>
   <li><b>Sin probar en el e2e:</b> el Schedule está desactivado y el timeout de 24 h del Wait no se ejercitó.</li>
-  <li><b>Bug abierto en la API:</b> ${esc(bug.hallazgo)} (ejecución #${esc(bug.n8n_execution_id)}). Mientras tanto, el formulario sólo ofrece Aprobar y Rechazar.</li>
+  <li><b>Bug de la API (corregido):</b> ${esc(bug.hallazgo)} (ejecución #${esc(bug.n8n_execution_id)}). Causa: ${esc(bug.correccion.causa_confirmada)}. Verificado en la ejecución #${esc(bug.correccion.verificado_en_ejecucion_n8n)}.</li>
 </ul>
 <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { useMaxWidth: true } });</script>
 </body></html>`;

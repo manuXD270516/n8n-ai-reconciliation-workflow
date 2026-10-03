@@ -1,25 +1,25 @@
 {
-  "execution_id": "17",
-  "statement_id": "stmt-e2e-down-20261003063059",
-  "tenant": "n8n-x17",
+  "execution_id": "27",
+  "statement_id": "stmt-e2e-down-20261003071017",
+  "tenant": "n8n-x27",
   "test_fault": "ollama_unreachable",
   "webhook_response": {
     "status": "accepted",
-    "execution_id": "17",
-    "statement_id": "stmt-e2e-down-20261003063059",
+    "execution_id": "27",
+    "statement_id": "stmt-e2e-down-20261003071017",
     "transactions": 18,
     "warnings": [],
     "next": "Conciliación en curso; el revisor recibirá un correo de aprobación y el reporte final llegará por correo."
   },
-  "seconds_until_waiting": 9.3,
+  "seconds_until_waiting": 10.9,
   "form_choice": "Rechazar las propuestas",
-  "form_response_excerpt": "Aprobación de conciliación (datos sintéticos) Conciliación stmt-e2e-down-20261003063059 (datos sintéticos): 6 conciliadas, 4 excepciones. 1. pay-n8n-0007 · UNMATCHED (AMOUNT_MISMATCH) → REQUEST_PROVID",
+  "form_response_excerpt": "Aprobación de conciliación (datos sintéticos) Conciliación stmt-e2e-down-20261003071017 (datos sintéticos): 6 conciliadas, 4 excepciones. 1. pay-n8n-0007 · UNMATCHED (AMOUNT_MISMATCH) → REQUEST_PROVID",
   "report": {
     "outcome": "COMPLETED_WITH_HUMAN_DECISION",
-    "execution_id": "17",
-    "statement_id": "stmt-e2e-down-20261003063059",
-    "tenant": "n8n-x17",
-    "batch_id": "b-stmt-e2e-down-20261003063059",
+    "execution_id": "27",
+    "statement_id": "stmt-e2e-down-20261003071017",
+    "tenant": "n8n-x27",
+    "batch_id": "b-stmt-e2e-down-20261003071017",
     "data_origin": "SYNTHETIC",
     "metrics": {
       "transactions_received": 18,
@@ -41,28 +41,28 @@
       "reviewer": "revisora.demo@example.test"
     },
     "timings_ms": {
-      "total": 10853,
-      "validation_to_ingest_done": 164,
-      "run_in_api": 243,
-      "investigations_wait": 4596,
-      "ai_classification": 2054,
-      "human_wait": 2532,
-      "automated": 8321
+      "total": 12595,
+      "validation_to_ingest_done": 210,
+      "run_in_api": 436,
+      "investigations_wait": 6122,
+      "ai_classification": 2076,
+      "human_wait": 2219,
+      "automated": 10376
     },
     "run": {
-      "run_id": "0778174b-7369-4f4c-8bff-d3970d01a88f",
+      "run_id": "107854ff-4e32-4661-afba-d2f3de4ecad7",
       "ruleset_version": "rules/v1",
-      "snapshot_hash": "9d9a0cec96ec2af036711a69fa5def284a6aa8bae3982afe00cf11d0e5c9c473"
+      "snapshot_hash": "8476ef8761d6ea7ff3d05d8af4b651e686f635a462f5088fbdfb51db73dcb155"
     },
     "cases": [
       {
-        "case_id": "8d38b9e9-debe-4200-81a5-92577ca68481",
+        "case_id": "b77fbb60-141a-4e2d-8647-23c02ce95362",
         "payment_ref": "pay-n8n-0007",
         "match_status": "UNMATCHED",
         "discrepancy_types": [
           "AMOUNT_MISMATCH"
         ],
-        "recommendation_id": "b6fbfd4b-a664-4542-9dd6-acb262bad6cb",
+        "recommendation_id": "f4fde68b-345c-4281-bd1c-56f76a6b477b",
         "investigation_state": "DRAFTED",
         "investigation_review": "SUPPORTED",
         "ai_source": "fallback",
@@ -74,13 +74,13 @@
         "prioridad": "media"
       },
       {
-        "case_id": "c8ff88aa-b2cf-49e6-9ff0-4390bcf8235a",
+        "case_id": "127ea4ed-6dc7-4624-a913-8ccdf5221d2b",
         "payment_ref": "pay-n8n-0008",
         "match_status": "UNMATCHED",
         "discrepancy_types": [
           "STATUS_MISMATCH"
         ],
-        "recommendation_id": "eed50da0-a0be-459d-acd6-c24f3c30d0f7",
+        "recommendation_id": "ee94c8a9-1b67-4934-a1cd-68255e4b80c1",
         "investigation_state": "DRAFTED",
         "investigation_review": "SUPPORTED",
         "ai_source": "fallback",
@@ -92,13 +92,13 @@
         "prioridad": "media"
       },
       {
-        "case_id": "4f2e7e6c-f3cd-4c04-9a5b-0fd80743d1d9",
+        "case_id": "34999679-1562-4fa7-b77d-6eae651c9c54",
         "payment_ref": "pay-n8n-0009",
         "match_status": "UNMATCHED",
         "discrepancy_types": [
           "MISSING_EXTERNAL"
         ],
-        "recommendation_id": "6b8330e0-a181-4479-9535-f0046daf308b",
+        "recommendation_id": "839fa7fb-efb0-4b20-81f6-83aad11b32e4",
         "investigation_state": "NOT_NEEDED",
         "investigation_review": null,
         "ai_source": "fallback",
@@ -110,13 +110,13 @@
         "prioridad": "alta"
       },
       {
-        "case_id": "067c1e54-b778-4081-b1d4-5fd6ad698164",
+        "case_id": "c3bc0d56-0d73-4fb0-a1f7-c41ba7ee3975",
         "payment_ref": "pay-n8n-0010",
         "match_status": "UNMATCHED",
         "discrepancy_types": [
           "MISSING_INTERNAL"
         ],
-        "recommendation_id": "d575aeca-84db-490e-a801-74b069495a7a",
+        "recommendation_id": "a0367859-0a28-458a-8288-09b45aefb4c7",
         "investigation_state": "NOT_NEEDED",
         "investigation_review": null,
         "ai_source": "fallback",
@@ -130,9 +130,9 @@
     ],
     "decisions": [
       {
-        "case_id": "8d38b9e9-debe-4200-81a5-92577ca68481",
+        "case_id": "b77fbb60-141a-4e2d-8647-23c02ce95362",
         "payment_ref": "pay-n8n-0007",
-        "decision_id": "d420367f-63e9-41bc-89a7-a9e3b3490f17",
+        "decision_id": "62d4caad-ea93-4311-95d7-861a88d7a58a",
         "decision": "REJECT",
         "replayed": false,
         "operational_effect": "none: the decision is recorded; no money movement is executed",
@@ -148,9 +148,9 @@
         ]
       },
       {
-        "case_id": "c8ff88aa-b2cf-49e6-9ff0-4390bcf8235a",
+        "case_id": "127ea4ed-6dc7-4624-a913-8ccdf5221d2b",
         "payment_ref": "pay-n8n-0008",
-        "decision_id": "12dcb94d-8473-40d4-a427-7519c5e83c7b",
+        "decision_id": "5bda3f2c-cf85-43eb-841f-7e388bf08e4a",
         "decision": "REJECT",
         "replayed": false,
         "operational_effect": "none: the decision is recorded; no money movement is executed",
@@ -166,9 +166,9 @@
         ]
       },
       {
-        "case_id": "4f2e7e6c-f3cd-4c04-9a5b-0fd80743d1d9",
+        "case_id": "34999679-1562-4fa7-b77d-6eae651c9c54",
         "payment_ref": "pay-n8n-0009",
-        "decision_id": "9611e34f-518e-41e8-8b0c-4697ab042b46",
+        "decision_id": "0a376c8e-23db-496a-8cd4-cbb6adc8b107",
         "decision": "REJECT",
         "replayed": false,
         "operational_effect": "none: the decision is recorded; no money movement is executed",
@@ -182,9 +182,9 @@
         ]
       },
       {
-        "case_id": "067c1e54-b778-4081-b1d4-5fd6ad698164",
+        "case_id": "c3bc0d56-0d73-4fb0-a1f7-c41ba7ee3975",
         "payment_ref": "pay-n8n-0010",
-        "decision_id": "30542638-9f17-46ed-836b-264d942677a7",
+        "decision_id": "a523090d-844d-4b17-a709-d6e8d756a6b5",
         "decision": "REJECT",
         "replayed": false,
         "operational_effect": "none: the decision is recorded; no money movement is executed",
@@ -199,17 +199,17 @@
       }
     ],
     "warnings": [],
-    "finished_at": "2026-10-03T06:31:43.722Z"
+    "finished_at": "2026-10-03T07:11:20.482Z"
   },
   "api_verification": [
     {
-      "case_id": "8d38b9e9-debe-4200-81a5-92577ca68481",
+      "case_id": "b77fbb60-141a-4e2d-8647-23c02ce95362",
       "payment_ref": "pay-n8n-0007",
       "http": 200,
       "case_status": "REJECTED",
       "decision": "REJECT",
       "approver": "reviewer:revisora.demo@example.test",
-      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 17)",
+      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 27)",
       "audit_actions": [
         "case.open",
         "investigation.request",
@@ -220,13 +220,13 @@
       ]
     },
     {
-      "case_id": "c8ff88aa-b2cf-49e6-9ff0-4390bcf8235a",
+      "case_id": "127ea4ed-6dc7-4624-a913-8ccdf5221d2b",
       "payment_ref": "pay-n8n-0008",
       "http": 200,
       "case_status": "REJECTED",
       "decision": "REJECT",
       "approver": "reviewer:revisora.demo@example.test",
-      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 17)",
+      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 27)",
       "audit_actions": [
         "case.open",
         "investigation.request",
@@ -237,13 +237,13 @@
       ]
     },
     {
-      "case_id": "4f2e7e6c-f3cd-4c04-9a5b-0fd80743d1d9",
+      "case_id": "34999679-1562-4fa7-b77d-6eae651c9c54",
       "payment_ref": "pay-n8n-0009",
       "http": 200,
       "case_status": "REJECTED",
       "decision": "REJECT",
       "approver": "reviewer:revisora.demo@example.test",
-      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 17)",
+      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 27)",
       "audit_actions": [
         "case.open",
         "recommendation.create",
@@ -252,13 +252,13 @@
       ]
     },
     {
-      "case_id": "067c1e54-b778-4081-b1d4-5fd6ad698164",
+      "case_id": "c3bc0d56-0d73-4fb0-a1f7-c41ba7ee3975",
       "payment_ref": "pay-n8n-0010",
       "http": 200,
       "case_status": "REJECTED",
       "decision": "REJECT",
       "approver": "reviewer:revisora.demo@example.test",
-      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 17)",
+      "reason": "E2E C_ollama_caido: revisado contra el extracto sintético. (revisor revisora.demo@example.test, formulario n8n, ejecución 27)",
       "audit_actions": [
         "case.open",
         "recommendation.create",
@@ -270,25 +270,25 @@
   "idempotency_replay": null,
   "mails": [
     {
-      "id": "7crukSnJnaqQHr9gjyyFjA",
-      "subject": "[Aprobación requerida] Conciliación stmt-e2e-down-20261003063059: 4 excepciones",
+      "id": "4QkZ08hIYGcvdb3HTAU91x",
+      "subject": "[Aprobación requerida] Conciliación stmt-e2e-down-20261003071017: 4 excepciones",
       "from": "n8n-conciliacion@example.test",
       "to": [
         "revisor@example.test"
       ],
-      "date": "2026-10-03T06:31:41Z",
+      "date": "2026-10-03T07:11:18Z",
       "size": 4669
     },
     {
-      "id": "33RKtRsGH0L9O8DZwYVKK7",
-      "subject": "[Reporte] Conciliación stmt-e2e-down-20261003063059: 6/10 conciliadas, 4 excepciones, 4 decisiones",
+      "id": "7ibJS8FxzmKEBCNm2XYJ74",
+      "subject": "[Reporte] Conciliación stmt-e2e-down-20261003071017: 6/10 conciliadas, 4 excepciones, 4 decisiones",
       "from": "n8n-conciliacion@example.test",
       "to": [
         "revisor@example.test",
         "operaciones@example.test"
       ],
-      "date": "2026-10-03T06:31:43Z",
-      "size": 2909
+      "date": "2026-10-03T07:11:20Z",
+      "size": 2910
     }
   ],
   "seconds_form_to_success": 3.4,
@@ -298,7 +298,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.853Z",
+      "started_at": "2026-10-03T07:11:07.866Z",
       "execution_ms": 0,
       "error": null
     },
@@ -307,8 +307,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.860Z",
-      "execution_ms": 9,
+      "started_at": "2026-10-03T07:11:07.876Z",
+      "execution_ms": 12,
       "error": null
     },
     {
@@ -316,8 +316,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.876Z",
-      "execution_ms": 3,
+      "started_at": "2026-10-03T07:11:07.907Z",
+      "execution_ms": 4,
       "error": null
     },
     {
@@ -325,8 +325,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.885Z",
-      "execution_ms": 2,
+      "started_at": "2026-10-03T07:11:07.922Z",
+      "execution_ms": 4,
       "error": null
     },
     {
@@ -334,8 +334,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.893Z",
-      "execution_ms": 11,
+      "started_at": "2026-10-03T07:11:07.932Z",
+      "execution_ms": 10,
       "error": null
     },
     {
@@ -343,8 +343,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.914Z",
-      "execution_ms": 5,
+      "started_at": "2026-10-03T07:11:07.956Z",
+      "execution_ms": 6,
       "error": null
     },
     {
@@ -352,7 +352,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.929Z",
+      "started_at": "2026-10-03T07:11:07.970Z",
       "execution_ms": 5,
       "error": null
     },
@@ -361,8 +361,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.939Z",
-      "execution_ms": 38,
+      "started_at": "2026-10-03T07:11:07.982Z",
+      "execution_ms": 52,
       "error": null
     },
     {
@@ -370,8 +370,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:32.984Z",
-      "execution_ms": 38,
+      "started_at": "2026-10-03T07:11:08.042Z",
+      "execution_ms": 42,
       "error": null
     },
     {
@@ -379,8 +379,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:33.028Z",
-      "execution_ms": 5,
+      "started_at": "2026-10-03T07:11:08.091Z",
+      "execution_ms": 7,
       "error": null
     },
     {
@@ -388,7 +388,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:33.039Z",
+      "started_at": "2026-10-03T07:11:08.105Z",
       "execution_ms": 15,
       "error": null
     },
@@ -397,8 +397,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:33.060Z",
-      "execution_ms": 12,
+      "started_at": "2026-10-03T07:11:08.127Z",
+      "execution_ms": 13,
       "error": null
     },
     {
@@ -406,8 +406,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:33.078Z",
-      "execution_ms": 13,
+      "started_at": "2026-10-03T07:11:08.149Z",
+      "execution_ms": 17,
       "error": null
     },
     {
@@ -415,8 +415,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:33.102Z",
-      "execution_ms": 17,
+      "started_at": "2026-10-03T07:11:08.175Z",
+      "execution_ms": 19,
       "error": null
     },
     {
@@ -424,7 +424,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:33.126Z",
+      "started_at": "2026-10-03T07:11:08.202Z",
       "execution_ms": 1001,
       "error": null
     },
@@ -433,8 +433,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:34.151Z",
-      "execution_ms": 15,
+      "started_at": "2026-10-03T07:11:09.213Z",
+      "execution_ms": 14,
       "error": null
     },
     {
@@ -442,8 +442,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:34.172Z",
-      "execution_ms": 1,
+      "started_at": "2026-10-03T07:11:09.236Z",
+      "execution_ms": 2,
       "error": null
     },
     {
@@ -451,8 +451,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:34.178Z",
-      "execution_ms": 12,
+      "started_at": "2026-10-03T07:11:09.247Z",
+      "execution_ms": 13,
       "error": null
     },
     {
@@ -460,8 +460,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:34.196Z",
-      "execution_ms": 5,
+      "started_at": "2026-10-03T07:11:09.269Z",
+      "execution_ms": 9,
       "error": null
     },
     {
@@ -469,8 +469,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:34.207Z",
-      "execution_ms": 3,
+      "started_at": "2026-10-03T07:11:09.285Z",
+      "execution_ms": 5,
       "error": null
     },
     {
@@ -478,8 +478,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:34.216Z",
-      "execution_ms": 22,
+      "started_at": "2026-10-03T07:11:09.298Z",
+      "execution_ms": 29,
       "error": null
     },
     {
@@ -487,8 +487,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:34.245Z",
-      "execution_ms": 27,
+      "started_at": "2026-10-03T07:11:09.335Z",
+      "execution_ms": 35,
       "error": null
     },
     {
@@ -496,8 +496,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:34.279Z",
-      "execution_ms": 4601,
+      "started_at": "2026-10-03T07:11:09.379Z",
+      "execution_ms": 6130,
       "error": null
     },
     {
@@ -505,8 +505,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:38.888Z",
-      "execution_ms": 8,
+      "started_at": "2026-10-03T07:11:15.519Z",
+      "execution_ms": 10,
       "error": null
     },
     {
@@ -514,8 +514,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:38.902Z",
-      "execution_ms": 2030,
+      "started_at": "2026-10-03T07:11:15.542Z",
+      "execution_ms": 2044,
       "error": null
     },
     {
@@ -523,8 +523,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:40.941Z",
-      "execution_ms": 10,
+      "started_at": "2026-10-03T07:11:17.596Z",
+      "execution_ms": 9,
       "error": null
     },
     {
@@ -532,8 +532,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:40.957Z",
-      "execution_ms": 23,
+      "started_at": "2026-10-03T07:11:17.613Z",
+      "execution_ms": 388,
       "error": null
     },
     {
@@ -541,8 +541,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:40.987Z",
-      "execution_ms": 28,
+      "started_at": "2026-10-03T07:11:18.009Z",
+      "execution_ms": 31,
       "error": null
     },
     {
@@ -550,8 +550,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:41.021Z",
-      "execution_ms": 9,
+      "started_at": "2026-10-03T07:11:18.048Z",
+      "execution_ms": 7,
       "error": null
     },
     {
@@ -559,8 +559,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:41.038Z",
-      "execution_ms": 53,
+      "started_at": "2026-10-03T07:11:18.063Z",
+      "execution_ms": 63,
       "error": null
     },
     {
@@ -568,8 +568,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.547Z",
-      "execution_ms": 0,
+      "started_at": "2026-10-03T07:11:20.253Z",
+      "execution_ms": 1,
       "error": null
     },
     {
@@ -577,8 +577,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.555Z",
-      "execution_ms": 6,
+      "started_at": "2026-10-03T07:11:20.266Z",
+      "execution_ms": 9,
       "error": null
     },
     {
@@ -586,7 +586,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.568Z",
+      "started_at": "2026-10-03T07:11:20.288Z",
       "execution_ms": 3,
       "error": null
     },
@@ -595,8 +595,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.577Z",
-      "execution_ms": 5,
+      "started_at": "2026-10-03T07:11:20.309Z",
+      "execution_ms": 6,
       "error": null
     },
     {
@@ -604,8 +604,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:43.589Z",
-      "execution_ms": 6,
+      "started_at": "2026-10-03T07:11:20.326Z",
+      "execution_ms": 5,
       "error": null
     },
     {
@@ -613,8 +613,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:43.602Z",
-      "execution_ms": 24,
+      "started_at": "2026-10-03T07:11:20.342Z",
+      "execution_ms": 28,
       "error": null
     },
     {
@@ -622,8 +622,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:43.636Z",
-      "execution_ms": 33,
+      "started_at": "2026-10-03T07:11:20.379Z",
+      "execution_ms": 39,
       "error": null
     },
     {
@@ -631,8 +631,8 @@
       "runs": 1,
       "status": "success",
       "items": 4,
-      "started_at": "2026-10-03T06:31:43.678Z",
-      "execution_ms": 29,
+      "started_at": "2026-10-03T07:11:20.431Z",
+      "execution_ms": 34,
       "error": null
     },
     {
@@ -640,8 +640,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.715Z",
-      "execution_ms": 8,
+      "started_at": "2026-10-03T07:11:20.473Z",
+      "execution_ms": 10,
       "error": null
     },
     {
@@ -649,8 +649,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.731Z",
-      "execution_ms": 50,
+      "started_at": "2026-10-03T07:11:20.492Z",
+      "execution_ms": 58,
       "error": null
     },
     {
@@ -658,7 +658,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:31:43.790Z",
+      "started_at": "2026-10-03T07:11:20.563Z",
       "execution_ms": 5,
       "error": null
     }
