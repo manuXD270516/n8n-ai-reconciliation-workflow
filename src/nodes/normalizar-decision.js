@@ -1,5 +1,5 @@
 // Nodo Code: "Normalizar decisión humana".
-// Traduce el formulario a la decisión de la API (APPROVE / REJECT),
+// Traduce el formulario a la decisión de la API (APPROVE / REJECT / NEEDS_INFORMATION),
 // valida motivo y revisor, y arma los claims del JWT de supervisor con el revisor como
 // sujeto (la API exige que quien decide no sea quien propuso ni quien pidió la investigación).
 
@@ -8,7 +8,7 @@ const form = $input.first().json;
 const MAP = {
   'Aprobar las propuestas': 'APPROVE',
   'Rechazar las propuestas': 'REJECT',
-  // NEEDS_INFORMATION no se ofrece: la API actual responde 500 al registrarla (ver README, limitaciones).
+  'Pedir más información': 'NEEDS_INFORMATION',
 };
 const raw = form['Decisión'];
 const decision = MAP[raw] || null;

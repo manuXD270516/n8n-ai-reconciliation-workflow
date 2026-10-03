@@ -1,34 +1,34 @@
 {
-  "execution_id": "19",
+  "execution_id": "30",
   "status": "error",
   "failed_node": {
     "node": "Crear lote (API)",
     "runs": 1,
     "status": "error",
     "items": 0,
-    "started_at": "2026-10-03T06:32:06.772Z",
-    "execution_ms": 25,
+    "started_at": "2026-10-03T07:12:06.415Z",
+    "execution_ms": 24,
     "error": "Your request is invalid or could not be processed by the service"
   },
-  "error_workflow_execution": "20",
+  "error_workflow_execution": "31",
   "mail": {
-    "id": "1LTGt1VaJPGAFRls8ipK0R",
-    "subject": "[ERROR] Conciliación de pagos asistida por IA con aprobación humana: ejecución #19 falló en Crear lote (API)",
+    "id": "78az5y1296LUpIzlRNOMbs",
+    "subject": "[ERROR] Conciliación de pagos asistida por IA con aprobación humana: ejecución #30 falló en Crear lote (API)",
     "from": "n8n-conciliacion@example.test",
     "to": [
       "operaciones@example.test"
     ],
-    "date": "2026-10-03T06:32:06Z",
+    "date": "2026-10-03T07:12:06Z",
     "size": 1493
   },
-  "mail_text": "--------------------------------------------------------------------\nFalla en Conciliación de pagos asistida por IA con aprobación humana\n--------------------------------------------------------------------\n\n* Ejecución: *#19* (webhook)\n* Nodo: *Crear lote (API)*\n* Error: Your request is invalid or could not be processed by the service\n* Detalle: String should match pattern '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'\n\nAbrir la ejecución en n8n ( http://localhost:15678/workflow/reconIaAprob0001/executions/19 )\n\nMensaje sanitizado: sin tokens ni encabezados de autenticación.",
+  "mail_text": "--------------------------------------------------------------------\nFalla en Conciliación de pagos asistida por IA con aprobación humana\n--------------------------------------------------------------------\n\n* Ejecución: *#30* (webhook)\n* Nodo: *Crear lote (API)*\n* Error: Your request is invalid or could not be processed by the service\n* Detalle: String should match pattern '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'\n\nAbrir la ejecución en n8n ( http://localhost:15678/workflow/reconIaAprob0001/executions/30 )\n\nMensaje sanitizado: sin tokens ni encabezados de autenticación.",
   "nodes": [
     {
       "node": "Webhook: extracto bancario",
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.596Z",
+      "started_at": "2026-10-03T07:12:06.212Z",
       "execution_ms": 0,
       "error": null
     },
@@ -37,8 +37,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.603Z",
-      "execution_ms": 9,
+      "started_at": "2026-10-03T07:12:06.221Z",
+      "execution_ms": 10,
       "error": null
     },
     {
@@ -46,7 +46,7 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.619Z",
+      "started_at": "2026-10-03T07:12:06.239Z",
       "execution_ms": 4,
       "error": null
     },
@@ -55,8 +55,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.634Z",
-      "execution_ms": 3,
+      "started_at": "2026-10-03T07:12:06.250Z",
+      "execution_ms": 2,
       "error": null
     },
     {
@@ -64,8 +64,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.648Z",
-      "execution_ms": 8,
+      "started_at": "2026-10-03T07:12:06.265Z",
+      "execution_ms": 11,
       "error": null
     },
     {
@@ -73,8 +73,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.661Z",
-      "execution_ms": 5,
+      "started_at": "2026-10-03T07:12:06.283Z",
+      "execution_ms": 6,
       "error": null
     },
     {
@@ -82,8 +82,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.671Z",
-      "execution_ms": 4,
+      "started_at": "2026-10-03T07:12:06.296Z",
+      "execution_ms": 5,
       "error": null
     },
     {
@@ -91,8 +91,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.680Z",
-      "execution_ms": 36,
+      "started_at": "2026-10-03T07:12:06.308Z",
+      "execution_ms": 41,
       "error": null
     },
     {
@@ -100,8 +100,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.722Z",
-      "execution_ms": 31,
+      "started_at": "2026-10-03T07:12:06.355Z",
+      "execution_ms": 39,
       "error": null
     },
     {
@@ -109,8 +109,8 @@
       "runs": 1,
       "status": "success",
       "items": 1,
-      "started_at": "2026-10-03T06:32:06.759Z",
-      "execution_ms": 5,
+      "started_at": "2026-10-03T07:12:06.401Z",
+      "execution_ms": 6,
       "error": null
     },
     {
@@ -118,8 +118,8 @@
       "runs": 1,
       "status": "error",
       "items": 0,
-      "started_at": "2026-10-03T06:32:06.772Z",
-      "execution_ms": 25,
+      "started_at": "2026-10-03T07:12:06.415Z",
+      "execution_ms": 24,
       "error": "Your request is invalid or could not be processed by the service"
     }
   ]
