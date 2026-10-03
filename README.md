@@ -63,14 +63,15 @@ El detalle nodo por nodo está en [docs/workflow.md](docs/workflow.md).
 | **Mailpit v1.31.4** (propio del proyecto) | Correo de aprobación, reporte final y alertas de error | Credencial SMTP de n8n. UI en `127.0.0.1:18825` |
 | **Playwright + Chromium** | E2E (el formulario se llena como lo haría una persona), capturas y PDF | `scripts/e2e.mjs`, `scripts/capture.mjs`, `scripts/build-pdf.mjs` |
 
-## Qué hice yo
+## Cómo se construyó y qué hice yo
 
-- Diseñé el flujo según lo que la API permite de verdad. La exploré por OpenAPI y con llamadas de prueba antes de escribir un solo nodo.
-- Escribí los 46 nodos funcionales y 4 notas: 13 Code, 16 HTTP Request, 3 JWT, 5 If, 2 Wait, 2 Email, 2 Respond to Webhook, Webhook, Schedule y Stop and Error, más un workflow de errores aparte.
-- Programé la validación de entrada, el polling acotado, el prompt con enums restringidos por discrepancia, el validador de la salida de la IA (formato, enums, *grounding* de montos y contradicciones) y el fallback determinístico.
-- Armé la infraestructura: el `compose.yaml` y la importación automática de credenciales y workflows (`scripts/setup.ps1`).
-- Escribí la validación end-to-end con escenarios negativos y la generación de capturas y del PDF de evidencia.
-- **Hallazgo real:** la corrida e2e encontró un bug en la API (`NEEDS_INFORMATION` responde 500). Lo documenté con evidencia y dejé el workflow seguro hasta que se corrija. Ver *Limitaciones*.
+El workflow se construyó con agentes de IA (Claude Code) bajo mi dirección:
+
+- Definí el proceso a automatizar, el alcance y los criterios de aceptación: la IA solo propone, una persona decide y cada decisión queda auditada en la API de conciliación, que es un proyecto propio.
+- Dirigí y revisé la implementación: el flujo se diseñó a partir de lo que la API permite de verdad, explorada por OpenAPI y con llamadas de prueba. Tiene 46 nodos funcionales y 4 notas (13 Code, 16 HTTP Request, 3 JWT, 5 If, 2 Wait, 2 Email, 2 Respond to Webhook, Webhook, Schedule y Stop and Error), más un workflow de errores aparte.
+- Revisé las decisiones de seguridad y de IA: validación de entrada, polling acotado, prompt con enums restringidos por discrepancia, validador de la salida de la IA (formato, enums, *grounding* de montos y contradicciones), fallback determinístico y redacción de secretos en las alertas.
+- Validé el resultado con la corrida end-to-end real (`scripts/e2e.ps1`), con escenarios negativos y verificación independiente en la API y en Mailpit.
+- **Hallazgo real:** la corrida e2e encontró un bug en la API (`NEEDS_INFORMATION` responde 500). Quedó documentado con evidencia y el workflow no expone esa opción hasta que se corrija. Ver *Limitaciones*.
 
 ## Cómo ejecutarlo
 

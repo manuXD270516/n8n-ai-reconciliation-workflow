@@ -93,10 +93,10 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
 
 <h2>Qué desarrollé</h2>
 <ul>
-  <li>Diseñé el flujo según lo que la API permite. Escribí ${workflow.nodes.length - 4} nodos funcionales y el código de 13 nodos Code: validación, polling, prompt, validador de IA, fallback y reportes.</li>
-  <li>Armé la infraestructura reproducible: Compose y un <code>setup.ps1</code> que importa credenciales y workflows con <code>n8n import</code> y los publica.</li>
-  <li>Escribí la validación end-to-end real con 6 escenarios, incluidos los negativos, la verificación independiente en la API y en Mailpit, y la evidencia JSON.</li>
-  <li>Hallazgo: el e2e detectó un bug real en la API (<code>NEEDS_INFORMATION</code> responde 500). Lo documenté y dejé el workflow seguro.</li>
+  <li>Definí el proceso a automatizar, el alcance y los criterios de aceptación: la IA solo propone, una persona decide y cada decisión queda auditada en la API.</li>
+  <li>Dirigí la implementación con agentes de IA (Claude Code) y revisé el diseño resultante: ${workflow.nodes.length - 4} nodos funcionales, 13 nodos Code (validación, polling, prompt, validador de la salida de la IA, fallback y reportes), infraestructura Compose y un <code>setup.ps1</code> que importa credenciales y workflows con <code>n8n import</code>.</li>
+  <li>Validé el resultado con una corrida end-to-end real de 6 escenarios, incluidos los negativos, con verificación independiente en la API y en Mailpit y evidencia JSON.</li>
+  <li>Hallazgo: el e2e detectó un bug real en la API (<code>NEEDS_INFORMATION</code> responde 500). Quedó documentado y el workflow no expone esa opción.</li>
 </ul>
 
 <h2>Resultado medido (corrida real, ejecución n8n #${esc(A.execution_id)})</h2>
